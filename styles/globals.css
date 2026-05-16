@@ -1,0 +1,355 @@
+/* ============================================
+   BIGWHALE — Global Styles
+   Futuristic · Crypto-Native · Deep Ocean
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+html,
+body {
+  min-height: 100%;
+  background-color: #050816;
+  color: #C8D7F5;
+}
+
+#__next {
+  height: 100%;
+}
+
+/* ── Scrollbar ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 229, 255, 0.3) rgba(5, 8, 22, 0.5);
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: rgba(5, 8, 22, 0.5); }
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(0, 229, 255, 0.55); }
+
+/* ── Code blocks ── */
+code {
+  font-family: 'Space Grotesk', 'Fira Code', monospace;
+  padding: 0.1rem 0.4rem;
+  font-size: 90%;
+  color: #00E5FF;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 4px;
+}
+code:not([class*='language-'])::before,
+code:not([class*='language-'])::after { content: '`'; }
+code[class*='language-'] { padding: 0; }
+
+/* ── Modal ── */
+.modalContent {
+  margin: auto;
+  padding: 20px;
+  width: 400px;
+}
+
+/* ── BIGWHALE Keyframes ── */
+@keyframes bwPulseGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(0,229,255,0.3), 0 0 20px rgba(0,229,255,0.1); }
+  50%       { box-shadow: 0 0 25px rgba(0,229,255,0.7), 0 0 50px rgba(0,229,255,0.25); }
+}
+@keyframes bwPulsePurple {
+  0%, 100% { box-shadow: 0 0 10px rgba(168,85,247,0.3); }
+  50%       { box-shadow: 0 0 30px rgba(168,85,247,0.7); }
+}
+@keyframes bwPulsePink {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,46,159,0.3); }
+  50%       { box-shadow: 0 0 30px rgba(255,46,159,0.7); }
+}
+@keyframes bwFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes bwShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes bwRotate {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes bwFadeInUp {
+  0%   { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes bwFadeIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes bwNeonBorder {
+  0%, 100% { border-color: rgba(0,229,255,0.4); }
+  33%       { border-color: rgba(168,85,247,0.4); }
+  66%       { border-color: rgba(255,46,159,0.4); }
+}
+@keyframes bwParticleFloat {
+  0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(-100px) scale(1); opacity: 0; }
+}
+@keyframes bwWaveMove {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes bwGradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes bwScanLine {
+  0%   { top: -5%; }
+  100% { top: 105%; }
+}
+@keyframes bwOrb {
+  0%   { transform: scale(1) translate(0, 0); }
+  33%  { transform: scale(1.1) translate(20px, -15px); }
+  66%  { transform: scale(0.95) translate(-10px, 20px); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+
+/* ── Utility Classes ── */
+.rotate { animation: spin 3s linear infinite; }
+.bw-rotate { animation: bwRotate 3s linear infinite; }
+.bw-float { animation: bwFloat 4s ease-in-out infinite; }
+.bw-fade-in-up { animation: bwFadeInUp 0.6s ease-out forwards; }
+.bw-fade-in { animation: bwFadeIn 0.4s ease-out forwards; }
+.bw-pulse-glow { animation: bwPulseGlow 3s ease-in-out infinite; }
+.bw-pulse-purple { animation: bwPulsePurple 3s ease-in-out infinite; }
+.bw-pulse-pink { animation: bwPulsePink 3s ease-in-out infinite; }
+.bw-neon-border { animation: bwNeonBorder 4s ease-in-out infinite; }
+
+/* Gradient text */
+.bw-gradient-text {
+  background: linear-gradient(135deg, #00E5FF 0%, #A855F7 50%, #FF2E9F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.bw-gradient-text-cyan {
+  background: linear-gradient(135deg, #00E5FF 0%, #00C2FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.bw-gradient-text-purple {
+  background: linear-gradient(135deg, #A855F7 0%, #FF2E9F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Shimmer */
+.bw-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.12) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: bwShimmer 2s linear infinite;
+}
+
+/* Glassmorphism */
+.bw-glass {
+  background: rgba(13, 18, 36, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 229, 255, 0.12);
+  border-radius: 16px;
+}
+.bw-glass-purple {
+  background: rgba(13, 18, 36, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(168, 85, 247, 0.15);
+  border-radius: 16px;
+}
+.bw-glass-pink {
+  background: rgba(13, 18, 36, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 46, 159, 0.15);
+  border-radius: 16px;
+}
+
+/* Glow helpers */
+.bw-glow-cyan   { box-shadow: 0 0 15px rgba(0,229,255,0.4), 0 0 30px rgba(0,229,255,0.15); }
+.bw-glow-purple { box-shadow: 0 0 15px rgba(168,85,247,0.4), 0 0 30px rgba(168,85,247,0.15); }
+.bw-glow-pink   { box-shadow: 0 0 15px rgba(255,46,159,0.4), 0 0 30px rgba(255,46,159,0.15); }
+
+/* Card hover */
+.bw-card {
+  background: rgba(13, 18, 36, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bw-card:hover {
+  border-color: rgba(0, 229, 255, 0.28);
+  box-shadow: 0 8px 32px rgba(0, 229, 255, 0.12);
+  transform: translateY(-3px);
+}
+
+/* Neon button */
+.bw-btn-neon {
+  background: linear-gradient(135deg, #00E5FF 0%, #00C2FF 100%);
+  color: #050816;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.bw-btn-neon:hover {
+  box-shadow: 0 0 20px rgba(0,229,255,0.55), 0 4px 15px rgba(0,229,255,0.3);
+  transform: translateY(-2px);
+}
+
+/* Cosmic background orbs */
+.bw-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+  animation: bwOrb 18s ease-in-out infinite;
+}
+.bw-orb-cyan {
+  background: radial-gradient(circle, rgba(0,229,255,0.18) 0%, transparent 70%);
+}
+.bw-orb-purple {
+  background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%);
+  animation-delay: -6s;
+}
+.bw-orb-pink {
+  background: radial-gradient(circle, rgba(255,46,159,0.12) 0%, transparent 70%);
+  animation-delay: -12s;
+}
+
+/* Scan line effect */
+.bw-scan-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent);
+  animation: bwScanLine 4s linear infinite;
+  pointer-events: none;
+}
+
+/* ── Layout helpers ── */
+.wallet-connection-error-img {
+  height: 160px !important;
+  width: 160px !important;
+}
+.nav-header {
+  padding: 0;
+  margin-left: -5px;
+}
+
+/* ── Animated gradient background ── */
+.bw-animated-bg {
+  background: linear-gradient(-45deg, #050816, #0D1224, #0B1535, #050816);
+  background-size: 400% 400%;
+  animation: bwGradientShift 15s ease infinite;
+}
+
+/* ── Holographic border ── */
+.bw-holo-border {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.bw-holo-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #00E5FF, #A855F7, #FF2E9F, #00E5FF);
+  background-size: 300% 300%;
+  animation: bwGradientShift 4s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Particle dots ── */
+.bw-particle {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(0, 229, 255, 0.6);
+  pointer-events: none;
+  animation: bwParticleFloat linear infinite;
+}
+
+/* ── Typography helpers ── */
+.bw-heading {
+  font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.bw-mono {
+  font-family: 'Space Grotesk', monospace;
+  letter-spacing: 0.03em;
+}
+
+/* ── Status badges ── */
+.bw-badge-active {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10B981;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-badge-pending {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #F59E0B;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-badge-error {
+  background: rgba(255, 46, 159, 0.15);
+  border: 1px solid rgba(255, 46, 159, 0.4);
+  color: #FF2E9F;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Divider ── */
+.bw-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent);
+  border: none;
+  margin: 16px 0;
+}
+
+/* ── Stat card number ── */
+.bw-stat-number {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00E5FF, #A855F7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

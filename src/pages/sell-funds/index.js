@@ -236,7 +236,7 @@ const SellFunds = () => {
 
   useEffect(() => {
     if (isFetchedKGC && Number(Number(availableKGC).toFixed(6)) < +sellAmount) {
-      setError("Insufficient BRC Tokens!");
+      setError("Insufficient BW Tokens!");
     } else {
       setError(null);
     }
@@ -297,7 +297,7 @@ const SellFunds = () => {
       <Card sx={{ border: 1 }}>
         <CardHeader
           sx={{ textAlign: "center", py: 8, fontSize: 24 }}
-          title={`Available BRC Balance : ${availableKGC?.toFixed(6) || 0}`}
+          title={`Available BW Balance : ${availableKGC?.toFixed(6) || 0}`}
         />
         <Divider sx={{ m: "0 !important" }} />
         <form onSubmit={(e) => e.preventDefault()}>
@@ -312,7 +312,7 @@ const SellFunds = () => {
                 <CustomTextField
                   fullWidth
                   label=""
-                  placeholder="Enter BRC Amount"
+                  placeholder="Enter BW Amount"
                   value={sellAmount}
                   // disabled={availableUSDC < stakeLimitInUSDC?.min}
                   onChange={(e) => {
@@ -392,7 +392,7 @@ const SellFunds = () => {
                   src="/images/favicon.ico"
                   width="32"
                   height="32"
-                  alt="brc-logo"
+                  alt="BW-logo"
                 />
 
                 {/* <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
@@ -410,7 +410,7 @@ const SellFunds = () => {
                   variant="span"
                   sx={{ textDecoration: "uppercase", mt: 4, color: "#9e9eb3" }}
                 >
-                  BRC Live Rate
+                  BW Live Rate
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "baseline" }}>
                   <Typography
@@ -429,7 +429,7 @@ const SellFunds = () => {
                     variant="span"
                     sx={{ mt: "auto", ml: 2, mb: 0.5 }}
                   >
-                    BRC
+                    BW
                   </Typography>
                 </Box>
               </Box>
@@ -472,7 +472,7 @@ const SellFunds = () => {
                     variant="span"
                     sx={{ mt: "auto", ml: 2, mb: 0.5 }}
                   >
-                    BRC
+                    BW
                   </Typography>
                 </Box>
               </Box>

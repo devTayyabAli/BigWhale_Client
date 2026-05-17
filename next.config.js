@@ -8,11 +8,12 @@ const nextConfig = {
 
   // ── Image Optimization ────────────────────────────────────────────
   images: {
-    // Allow images from your API server
-    domains: [
-      'localhost',
-      'api.kgc.world',
-      'blackrockcommunity.cloud',
+    // Allow images from your API server (remotePatterns replaces deprecated domains)
+    remotePatterns: [
+      { protocol: 'http',  hostname: 'localhost' },
+      { protocol: 'https', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'api.bwscan.io' },
+      { protocol: 'https', hostname: 'bwscan.io' },
     ],
     // Modern formats for smaller file sizes
     formats: ['image/avif', 'image/webp'],
@@ -26,6 +27,11 @@ const nextConfig = {
   // ── Production Source Maps ────────────────────────────────────────
   // Disable in production to reduce bundle size (Sentry handles this)
   productionBrowserSourceMaps: false,
+
+  // ── Turbopack root (silences multi-lockfile workspace warning) ───
+  turbopack: {
+    root: __dirname,
+  },
 
   // ── Experimental Performance Features ────────────────────────────
   experimental: {
@@ -126,21 +132,24 @@ const nextConfig = {
   },
 }
 
-// ── Sentry Integration ────────────────────────────────────────────────
+// ── Sentry Integration (production only — withSentryConfig breaks Turbopack in dev) ──
 const { withSentryConfig } = require("@sentry/nextjs");
 
-module.exports = withSentryConfig(
-  nextConfig,
-  {
-    silent: true,
-    org: "invozone-z6",
-    project: "metaunity-nextjs",
-  },
-  {
-    widenClientFileUpload: true,
-    // Removed transpileClientSDK — deprecated and increases bundle size
-    hideSourceMaps: true,
-    disableLogger: true,
-    automaticVercelMonitors: false, // disable unless using Vercel
-  }
-)
+const isDev = process.env.NODE_ENV === 'development';
+
+module.exports = isDev
+  ? nextConfig
+  : withSentryConfig(
+      nextConfig,
+      {
+        silent: true,
+        org: "invozone-z6",
+        project: "metaunity-nextjs",
+      },
+      {
+        widenClientFileUpload: true,
+        hideSourceMaps: true,
+        disableLogger: true,
+        automaticVercelMonitors: false,
+      }
+    );

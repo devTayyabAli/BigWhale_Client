@@ -58,17 +58,17 @@ const TermsAndServices = () => {
           alignItems: "center",
           borderRadius: "20px",
           justifyContent: "center",
-          backgroundImage: `url(/images/pages/${backgroundImageUrl}.jpg)`,
+          backgroundImage: `url(/images/pages/logInPic.jpeg)`,
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           backgroundSize: "cover",
           margin: () => spacing(8, 0, 8, 8),
         }}
       >
-        <LoginIllustration
+        {/* <LoginIllustration
           alt="login-illustration"
           src={`/images/pages/${imageSource}.png`}
-        />
+        /> */}
         <FooterIllustrationsV2 />
       </Box>
     ) : null}
@@ -101,7 +101,7 @@ const TermsAndServices = () => {
                 </li>
                 <li>
                   <Typography variant="body1">
-                    Deposit and Withdrawal Available In BRC Token Only
+                    Deposit and Withdrawal Available In BW Token Only
                   </Typography>
                 </li>
                 <li>

@@ -1,15 +1,13 @@
-// ** BIGWHALE — Social OAuth Verification Slice
+// ** BIGWHALE — Social Verification Slice
 //
 // Telegram: Login Widget → backend verifies hash + getChatMember
-// Twitter:  OAuth 2.0 PKCE popup → backend callback → checkFollowing
-//
-// User just clicks a button — no username input needed.
+// WhatsApp: User joins channel → clicks "I've Joined" → backend marks verified
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "src/api/api";
 import {
   VERIFY_TELEGRAM_ENDPOINT,
-  TWITTER_AUTH_URL_ENDPOINT,
+  VERIFY_WHATSAPP_ENDPOINT,
   SOCIAL_STATUS_ENDPOINT,
 } from "src/api/apiEndPoint";
 
@@ -18,19 +16,18 @@ const initialState = {
   telegramJoined:     false,
   telegramUsername:   null,
   telegramVerifiedAt: null,
-  twitterFollowed:    false,
-  twitterUsername:    null,
-  twitterVerifiedAt:  null,
+  whatsappJoined:     false,
+  whatsappVerifiedAt: null,
   bothConfirmed:      false,
 
   // Loading / error per action
-  fetchStatus:    "idle",   // idle | loading | succeeded | failed
-  telegramStatus: "idle",   // idle | loading | succeeded | failed
-  twitterStatus:  "idle",   // idle | loading | succeeded | failed
+  fetchStatus:     "idle",   // idle | loading | succeeded | failed
+  telegramStatus:  "idle",   // idle | loading | succeeded | failed
+  whatsappStatus:  "idle",   // idle | loading | succeeded | failed
 
-  telegramError:  null,
-  twitterError:   null,
-  fetchError:     null,
+  telegramError:   null,
+  whatsappError:   null,
+  fetchError:      null,
 };
 
 // ── Thunk: fetch current social status from DB ───────────────────────
@@ -47,7 +44,6 @@ export const fetchSocialStatus = createAsyncThunk(
 );
 
 // ── Thunk: verify Telegram via Login Widget data ─────────────────────
-// Called after the Telegram Login Widget sends auth data to our frontend
 export const verifyTelegram = createAsyncThunk(
   "socialConfirm/verifyTelegram",
   async ({ userId, telegramData }, { rejectWithValue }) => {
@@ -62,17 +58,17 @@ export const verifyTelegram = createAsyncThunk(
   }
 );
 
-// ── Thunk: get Twitter OAuth URL and open popup ──────────────────────
-// Returns the auth URL; the actual verification happens via backend callback
-export const getTwitterAuthUrl = createAsyncThunk(
-  "socialConfirm/getTwitterAuthUrl",
+// ── Thunk: verify WhatsApp channel join ──────────────────────────────
+// User clicks "I've Joined" → backend marks whatsappJoined = true
+export const verifyWhatsApp = createAsyncThunk(
+  "socialConfirm/verifyWhatsApp",
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await api.get(`${TWITTER_AUTH_URL_ENDPOINT}?userId=${userId}`);
-      return res.data?.data?.authUrl;
+      const res = await api.post(VERIFY_WHATSAPP_ENDPOINT, { userId });
+      return res.data?.data;
     } catch (err) {
       return rejectWithValue(
-        err?.response?.data?.message || "Failed to get Twitter auth URL"
+        err?.response?.data?.message || "WhatsApp verification failed"
       );
     }
   }
@@ -83,21 +79,8 @@ const socialConfirmSlice = createSlice({
   name: "socialConfirm",
   initialState,
   reducers: {
-    // Called after Twitter OAuth callback redirects back with ?twitter_status=verified
-    setTwitterVerified: (state, action) => {
-      state.twitterFollowed = true;
-      state.twitterUsername = action.payload?.username || null;
-      state.twitterVerifiedAt = new Date().toISOString();
-      state.twitterStatus = "succeeded";
-      state.twitterError  = null;
-      state.bothConfirmed = state.telegramJoined && true;
-    },
-    setTwitterError: (state, action) => {
-      state.twitterStatus = "failed";
-      state.twitterError  = action.payload;
-    },
     clearTelegramError: (state) => { state.telegramError = null; },
-    clearTwitterError:  (state) => { state.twitterError  = null; },
+    clearWhatsAppError: (state) => { state.whatsappError = null; },
     resetSocialConfirm: () => initialState,
   },
   extraReducers: (builder) => {
@@ -109,14 +92,13 @@ const socialConfirmSlice = createSlice({
         state.fetchError  = null;
       })
       .addCase(fetchSocialStatus.fulfilled, (state, action) => {
-        state.fetchStatus       = "succeeded";
-        state.telegramJoined    = action.payload?.telegramJoined    || false;
-        state.telegramUsername  = action.payload?.telegramUsername  || null;
-        state.telegramVerifiedAt= action.payload?.telegramVerifiedAt|| null;
-        state.twitterFollowed   = action.payload?.twitterFollowed   || false;
-        state.twitterUsername   = action.payload?.twitterUsername   || null;
-        state.twitterVerifiedAt = action.payload?.twitterVerifiedAt || null;
-        state.bothConfirmed     = action.payload?.bothConfirmed     || false;
+        state.fetchStatus        = "succeeded";
+        state.telegramJoined     = action.payload?.telegramJoined     || false;
+        state.telegramUsername   = action.payload?.telegramUsername   || null;
+        state.telegramVerifiedAt = action.payload?.telegramVerifiedAt || null;
+        state.whatsappJoined     = action.payload?.whatsappJoined     || false;
+        state.whatsappVerifiedAt = action.payload?.whatsappVerifiedAt || null;
+        state.bothConfirmed      = action.payload?.bothConfirmed      || false;
       })
       .addCase(fetchSocialStatus.rejected, (state, action) => {
         state.fetchStatus = "failed";
@@ -130,11 +112,11 @@ const socialConfirmSlice = createSlice({
         state.telegramError  = null;
       })
       .addCase(verifyTelegram.fulfilled, (state, action) => {
-        state.telegramStatus    = "succeeded";
-        state.telegramJoined    = true;
-        state.telegramUsername  = action.payload?.telegramUsername || null;
-        state.telegramVerifiedAt= new Date().toISOString();
-        state.bothConfirmed     = true && state.twitterFollowed;
+        state.telegramStatus     = "succeeded";
+        state.telegramJoined     = true;
+        state.telegramUsername   = action.payload?.telegramUsername || null;
+        state.telegramVerifiedAt = new Date().toISOString();
+        state.bothConfirmed      = true && state.whatsappJoined;
       })
       .addCase(verifyTelegram.rejected, (state, action) => {
         state.telegramStatus = "failed";
@@ -142,28 +124,29 @@ const socialConfirmSlice = createSlice({
         state.telegramJoined = false;
       });
 
-    // ── getTwitterAuthUrl ──────────────────────────────────────────
+    // ── verifyWhatsApp ─────────────────────────────────────────────
     builder
-      .addCase(getTwitterAuthUrl.pending, (state) => {
-        state.twitterStatus = "loading";
-        state.twitterError  = null;
+      .addCase(verifyWhatsApp.pending, (state) => {
+        state.whatsappStatus = "loading";
+        state.whatsappError  = null;
       })
-      .addCase(getTwitterAuthUrl.fulfilled, (state) => {
-        // URL fetched — popup will open; status stays loading until callback
-        // twitterStatus stays "loading" until setTwitterVerified or setTwitterError is called
+      .addCase(verifyWhatsApp.fulfilled, (state) => {
+        state.whatsappStatus     = "succeeded";
+        state.whatsappJoined     = true;
+        state.whatsappVerifiedAt = new Date().toISOString();
+        state.bothConfirmed      = state.telegramJoined && true;
       })
-      .addCase(getTwitterAuthUrl.rejected, (state, action) => {
-        state.twitterStatus = "failed";
-        state.twitterError  = action.payload;
+      .addCase(verifyWhatsApp.rejected, (state, action) => {
+        state.whatsappStatus = "failed";
+        state.whatsappError  = action.payload;
+        state.whatsappJoined = false;
       });
   },
 });
 
 export const {
-  setTwitterVerified,
-  setTwitterError,
   clearTelegramError,
-  clearTwitterError,
+  clearWhatsAppError,
   resetSocialConfirm,
 } = socialConfirmSlice.actions;
 

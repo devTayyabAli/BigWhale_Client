@@ -24,8 +24,7 @@ import themeConfig from "src/configs/themeConfig";
 import Confetti from "react-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 
-// ** Fake-DB Import
-import "src/@fake-db";
+// ** Fake-DB Import — loaded dynamically to avoid blocking Turbopack compilation
 
 // ** Third Party Import
 import { Toaster } from "react-hot-toast";
@@ -73,7 +72,7 @@ import "prismjs/components/prism-tsx";
 
 // ** React Perfect Scrollbar Style
 import "react-perfect-scrollbar/dist/css/styles.css";
-import "src/iconify-bundle/icons-bundle-react";
+// Icons bundle is loaded dynamically on the client to avoid blocking Turbopack compilation
 
 // ** Global css styles
 import "../../styles/globals.css";
@@ -168,6 +167,13 @@ const App = (props) => {
   };
 
   
+  useEffect(() => {
+    // Load the iconify bundle client-side to avoid blocking Turbopack compilation
+    import("src/iconify-bundle/icons-bundle-react");
+    // Load fake-db mock adapter client-side
+    import("src/@fake-db");
+  }, []);
+
   useEffect(() => {
     if (!socket) {
       const connectedSocket = Socket.connectSocket();

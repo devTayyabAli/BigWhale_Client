@@ -39,6 +39,7 @@ import { deletePendingUser } from 'src/store/apps/auth/signupSlice'
 import isMobile from 'is-mobile'
 import NetworkSelector from 'src/views/components/choose-network-modal'
 import { keyframes } from '@emotion/react'
+import Image from 'next/image'
 
 // ── Animations ──────────────────────────────────────────────────────
 const pulseGlow = keyframes`
@@ -337,8 +338,11 @@ const Register = () => {
             <Box sx={{ position: 'absolute', bottom: '15%', left: '5%', width: '220px', height: '220px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 }} />
 
             <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', px: 6 }}>
-              <Box sx={{ width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #FF2E9F 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', animation: `${pulseGlow} 3s ease-in-out infinite`, fontSize: '1.8rem', fontWeight: 900, color: '#050816', fontFamily: '"Orbitron", sans-serif', boxShadow: '0 0 30px rgba(0,229,255,0.5)' }}>
-                BW
+              <Box sx={{ width: 200, height: 200, 
+              borderRadius: '50%', background: 'linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #FF2E9F 100%)', display: 'flex', 
+                alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', animation: `${pulseGlow} 3s ease-in-out infinite`, fontSize: '1.8rem', fontWeight: 900, color: '#050816', fontFamily: '"Orbitron", sans-serif', boxShadow: '0 0 30px rgba(0,229,255,0.5)' }}>
+                <Image src="/images/pages/pre-loader-new.png" alt="bw-logo" width="210" height="210" />
+
               </Box>
               <Typography sx={{ fontFamily: '"Orbitron", sans-serif', fontWeight: 900, fontSize: '2.4rem', letterSpacing: '0.15em', background: 'linear-gradient(135deg, #00E5FF 0%, #A855F7 50%, #FF2E9F 100%)', backgroundSize: '200% 200%', animation: `${gradientShift} 4s ease infinite`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', mb: 1 }}>
                 BIGWHALE
@@ -362,7 +366,8 @@ const Register = () => {
               {/* Logo */}
               <Box sx={{ textAlign: 'center', mb: 3 }}>
                 <Box sx={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #FF2E9F 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: '0.95rem', fontWeight: 900, color: '#050816', fontFamily: '"Orbitron", sans-serif', boxShadow: '0 0 16px rgba(0,229,255,0.4)' }}>
-                  BW
+                <Image src="/images/pages/pre-loader-new.png" alt="bw-logo" width="55" height="55" />
+                  
                 </Box>
                 <Typography sx={{ fontFamily: '"Orbitron", sans-serif', fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.1em', background: 'linear-gradient(135deg, #00E5FF, #A855F7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', mb: 0.5 }}>
                   Create Account

@@ -40,12 +40,12 @@ const PrivacyPolicy = () => {
 
   const imageSource =
     skin === "bordered"
-      ? "auth-v2-login-illustration-bordered"
+      ? "logInPic.jpeg"
       : settings.mode === "dark"
-      ? "Logo-signup"
-      : "Logo-signup";
+      ? "logInPic.jpeg"
+      : "logInPic.jpeg";
 
-  const backgroundImageUrl = "BG-new-kgc";
+  const backgroundImageUrl = "logInPic.jpeg";
 
   return (
     <Box className="content-right" sx={{ backgroundColor: "background.paper" }}>
@@ -58,17 +58,17 @@ const PrivacyPolicy = () => {
           alignItems: "center",
           borderRadius: "20px",
           justifyContent: "center",
-          backgroundImage: `url(/images/pages/${backgroundImageUrl}.jpg)`,
+          backgroundImage: `url(/images/pages/logInPic.jpeg)`,
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           backgroundSize: "cover",
           margin: () => spacing(8, 0, 8, 8),
         }}
       >
-        <LoginIllustration
+        {/* <LoginIllustration
           alt="login-illustration"
-          src={`/images/pages/${imageSource}.png`}
-        />
+          src={`/images/pages/logInPic.jpeg`}
+        /> */}
         <FooterIllustrationsV2 />
       </Box>
     ) : null}

@@ -2,6 +2,7 @@
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import { keyframes } from '@emotion/react'
+import Image from 'next/image'
 
 const rotateOuter = keyframes`
   0%   { transform: rotate(0deg); }
@@ -97,7 +98,8 @@ const FallbackSpinner = ({ sx }) => {
             animation: `${pulseGlow} 2s ease-in-out infinite`,
           }}
         >
-          BW
+          <Image src="/images/pages/pre-loader-new.png" alt="bw-logo" width="100" height="100" />
+
         </Box>
       </Box>
 

@@ -7,6 +7,7 @@ import { styled, useTheme } from '@mui/material/styles'
 import Icon from 'src/@core/components/icon'
 import themeConfig from 'src/configs/themeConfig'
 import { keyframes } from '@emotion/react'
+import Image from 'next/image'
 
 const pulseGlow = keyframes`
   0%,100% { box-shadow: 0 0 10px rgba(0,229,255,0.4); }
@@ -82,7 +83,7 @@ const VerticalNavHeader = props => {
               transition: 'all 0.25s ease',
             }}
           >
-            BW
+             <Image src="/images/pages/pre-loader-new.png" alt="bw-logo" width="40" height="40"/>
           </Box>
 
           {/* Brand text — only visible when nav is expanded */}

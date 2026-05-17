@@ -42,7 +42,7 @@ const BigWhaleLogo = () => (
       }}
     >
    <Image src="/images/pages/pre-loader-new.png" alt="bw-logo" width="60" height="60"/>
-   {/* <img src="/images/KGCNightLogo.png" width="170" height="auto" alt="brc-logo" /> */}
+   {/* <img src="/images/KGCNightLogo.png" width="170" height="auto" alt="BW-logo" /> */}
     </Box>
 
     {/* Brand Name */}

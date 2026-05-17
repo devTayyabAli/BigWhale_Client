@@ -36,7 +36,7 @@ const columns = [
     flex: 0.1,
     minWidth: 150,
     field: "amount",
-    headerName: "AMOUNT (BRC)",
+    headerName: "AMOUNT (BW)",
     renderCell: ({ row }) => (
       <>
         <Typography sx={{ color: "text.secondary" }}>{row?.amount}</Typography>

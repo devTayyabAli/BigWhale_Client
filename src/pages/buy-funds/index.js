@@ -326,7 +326,7 @@ const BuyFunds = () => {
             <Grid container spacing={5} mt={2}>
               <Grid item xs={12}>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  BRC TOKENS*
+                  BW TOKENS*
                 </Typography>
               </Grid>
               <Grid item xs={12}>
@@ -335,14 +335,14 @@ const BuyFunds = () => {
                   label=""
                   type="number"
                   disabled={true}
-                  placeholder="BRC Tokens (BRC)"
+                  placeholder="Big Whale Tokens (BW)"
                   value={buyFundAmountInKGC || 0}
                 />
               </Grid>
             </Grid>
             <Box sx={{ display: "flex", mt: 10, alignItems: "center" }}>
               <Box sx={{ mr: 4 }}>
-              <img src="/images/favicon.ico" width="32" height="32" alt="brc-logo" />
+              <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
 
                 {/* <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
                   <g fill="none">
@@ -359,7 +359,7 @@ const BuyFunds = () => {
                   variant="span"
                   sx={{ textDecoration: "uppercase", mt: 4, color: "#9e9eb3" }}
                 >
-                  BRC Live Rate
+                  BW Live Rate
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "baseline" }}>
                   <Typography
@@ -378,7 +378,7 @@ const BuyFunds = () => {
                     variant="span"
                     sx={{ mt: "auto", ml: 2, mb: 0.5 }}
                   >
-                    BRC
+                    BW
                   </Typography>
                 </Box>
               </Box>

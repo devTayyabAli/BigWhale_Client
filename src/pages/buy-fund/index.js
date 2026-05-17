@@ -21,7 +21,7 @@ const BuyFund = () => {
       <Card sx={{ border: 1 }}>
         <CardHeader
           sx={{ textAlign: "center", py: 8, fontSize: 24 }}
-          title={contribution === true ? "Stake BRC" : "Pay $3 for LP (Liquidity pool)"}
+          title={contribution === true ? "Stake BW" : "Pay $3 for LP (Liquidity pool)"}
         />
         <Divider sx={{ m: "0 !important" }} />
         <form onSubmit={(e) => e.preventDefault()}>
@@ -39,7 +39,7 @@ const BuyFund = () => {
             <Grid container spacing={5} sx={{ mt: 4 }}>
               <Grid item xs={12}>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  BRC Token Amount*
+                  BW Token Amount*
                 </Typography>
               </Grid>
               <Grid item xs={12}>
@@ -60,7 +60,7 @@ const BuyFund = () => {
               </Box>
               <Box>
                 <Typography variant="span" sx={{ textDecoration: "uppercase", mt: 4, color: "" }}>
-                  BRC Live Rate
+                  BW Live Rate
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "baseline" }}>
                   <Typography
@@ -70,7 +70,7 @@ const BuyFund = () => {
                     219.30000
                   </Typography>
                   <Typography variant="span" sx={{ mt: "auto", ml: 2 }}>
-                    BRC
+                    BW
                   </Typography>
                 </Box>
               </Box>
@@ -99,7 +99,7 @@ const BuyFund = () => {
                     0.00000
                   </Typography>
                   <Typography variant="span" sx={{ mt: "auto", ml: 2 }}>
-                    BRC
+                    BW
                   </Typography>
                 </Box>
               </Box>

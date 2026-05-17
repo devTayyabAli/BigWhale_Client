@@ -14,7 +14,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 
 // ** React Imports
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState, useContext, useCallback, useRef } from "react";
+import { useEffect, useState, useContext, useCallback } from "react";
 
 // ** Custom Component Import
 import CustomTextField from "src/@core/components/mui/text-field";
@@ -32,11 +32,9 @@ import { completeWithdraw } from "src/store/apps/transaction/completeTransaction
 import {
   fetchSocialStatus,
   verifyTelegram,
-  getTwitterAuthUrl,
-  setTwitterVerified,
-  setTwitterError,
+  verifyWhatsApp,
   clearTelegramError,
-  clearTwitterError,
+  clearWhatsAppError,
 } from "src/store/apps/auth/socialConfirmSlice";
 
 // ** Web3
@@ -58,27 +56,21 @@ import Icon from "src/@core/components/icon";
 // ** Next
 import { useRouter } from "next/router";
 
-// ── Telegram Login Widget loader ─────────────────────────────────────
-// Injects the official Telegram Login Widget script once
-const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || "BigWhaleVerifyBot";
-const TELEGRAM_GROUP_URL = "https://t.me/bigwhaleofficial";
-const TWITTER_FOLLOW_URL = "https://x.com/bigwhaleofficial";
+// ── Constants ────────────────────────────────────────────────────────
+const TELEGRAM_BOT_NAME   = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || "BigWhaleVerifyBot";
+const TELEGRAM_GROUP_URL  = "https://t.me/+3zdUVhUPJsc1ODY8";
+const WHATSAPP_CHANNEL_URL = process.env.NEXT_PUBLIC_WHATSAPP_CHANNEL_URL || "https://whatsapp.com/channel/bigwhaleofficial";
 
 // ── useTelegramWidget hook ───────────────────────────────────────────
-// Loads the Telegram Login Widget script and calls onAuth when user approves
 const useTelegramWidget = (containerId, onAuth) => {
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    // Remove any previous widget
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = "";
 
-    // Register the global callback Telegram will call
     window.onTelegramAuth = (user) => { onAuth(user); };
 
-    // Create the script element
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-widget.js?22";
     script.setAttribute("data-telegram-login", TELEGRAM_BOT_NAME);
@@ -86,7 +78,6 @@ const useTelegramWidget = (containerId, onAuth) => {
     script.setAttribute("data-onauth", "onTelegramAuth(user)");
     script.setAttribute("data-request-access", "write");
     script.async = true;
-
     container.appendChild(script);
 
     return () => {
@@ -186,77 +177,33 @@ const SocialStep = ({
 // ── Social Gate Modal ────────────────────────────────────────────────
 const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
   const dispatch = useDispatch();
-  const router   = useRouter();
 
-  const telegramJoined    = useSelector(s => s.socialConfirm.telegramJoined);
-  const telegramVerifiedAt= useSelector(s => s.socialConfirm.telegramVerifiedAt);
-  const twitterFollowed   = useSelector(s => s.socialConfirm.twitterFollowed);
-  const twitterVerifiedAt = useSelector(s => s.socialConfirm.twitterVerifiedAt);
-  const telegramStatus    = useSelector(s => s.socialConfirm.telegramStatus);
-  const twitterStatus     = useSelector(s => s.socialConfirm.twitterStatus);
-  const telegramError     = useSelector(s => s.socialConfirm.telegramError);
-  const twitterError      = useSelector(s => s.socialConfirm.twitterError);
+  const telegramJoined     = useSelector(s => s.socialConfirm.telegramJoined);
+  const telegramVerifiedAt = useSelector(s => s.socialConfirm.telegramVerifiedAt);
+  const whatsappJoined     = useSelector(s => s.socialConfirm.whatsappJoined);
+  const whatsappVerifiedAt = useSelector(s => s.socialConfirm.whatsappVerifiedAt);
+  const telegramStatus     = useSelector(s => s.socialConfirm.telegramStatus);
+  const whatsappStatus     = useSelector(s => s.socialConfirm.whatsappStatus);
+  const telegramError      = useSelector(s => s.socialConfirm.telegramError);
+  const whatsappError      = useSelector(s => s.socialConfirm.whatsappError);
 
-  const bothVerified = telegramJoined && twitterFollowed;
-  const twitterPopupRef = useRef(null);
+  const bothVerified = telegramJoined && whatsappJoined;
 
   // ── Telegram Widget callback ──────────────────────────────────────
   const handleTelegramAuth = useCallback(async (telegramData) => {
     if (!userId || !telegramData) return;
     dispatch(clearTelegramError());
-    await dispatch(verifyTelegram({ userId, telegramData }));
+    dispatch(verifyTelegram({ userId, telegramData }));
   }, [userId, dispatch]);
 
-  // Load Telegram widget into the container div
   useTelegramWidget("telegram-widget-container", handleTelegramAuth);
 
-  // ── Twitter OAuth popup ───────────────────────────────────────────
-  const handleTwitterConnect = async () => {
+  // ── WhatsApp: user clicks "I've Joined" ───────────────────────────
+  const handleWhatsAppVerify = useCallback(async () => {
     if (!userId) return;
-    dispatch(clearTwitterError());
-
-    // Get the OAuth URL from backend
-    const result = await dispatch(getTwitterAuthUrl(userId));
-    if (!getTwitterAuthUrl.fulfilled.match(result)) return;
-
-    const authUrl = result.payload;
-
-    // Open OAuth popup (600×700)
-    const w = 600, h = 700;
-    const left = window.screenX + (window.outerWidth - w) / 2;
-    const top  = window.screenY + (window.outerHeight - h) / 2;
-    twitterPopupRef.current = window.open(
-      authUrl,
-      "twitter_oauth",
-      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no`
-    );
-
-    // Poll until popup closes
-    const pollTimer = setInterval(() => {
-      if (twitterPopupRef.current?.closed) {
-        clearInterval(pollTimer);
-        // Re-fetch status from DB to see if callback saved the result
-        if (userId) dispatch(fetchSocialStatus(userId));
-      }
-    }, 500);
-  };
-
-  // ── Handle twitter_status query param from OAuth callback redirect ─
-  useEffect(() => {
-    if (!open) return;
-    const { twitter_status, msg } = router.query;
-    if (twitter_status === "verified") {
-      dispatch(setTwitterVerified({}));
-      // Clean URL
-      router.replace("/withdrawal", undefined, { shallow: true });
-    } else if (twitter_status === "not_following") {
-      dispatch(setTwitterError(decodeURIComponent(msg || "You are not following BIGWHALE on X. Please follow and try again.")));
-      router.replace("/withdrawal", undefined, { shallow: true });
-    } else if (twitter_status === "error") {
-      dispatch(setTwitterError(decodeURIComponent(msg || "Twitter verification failed. Please try again.")));
-      router.replace("/withdrawal", undefined, { shallow: true });
-    }
-  }, [router.query, open]);
+    dispatch(clearWhatsAppError());
+    dispatch(verifyWhatsApp(userId));
+  }, [userId, dispatch]);
 
   // ── Auto-proceed when both verified ──────────────────────────────
   useEffect(() => {
@@ -264,7 +211,7 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
       const t = setTimeout(() => { onBothVerified(); }, 800);
       return () => clearTimeout(t);
     }
-  }, [bothVerified, open]);
+  }, [bothVerified, open, onBothVerified]);
 
   return (
     <Dialog
@@ -285,7 +232,7 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
             position: "absolute",
             top: 0, left: 0, right: 0,
             height: "2px",
-            background: "linear-gradient(90deg, #00E5FF, #A855F7, #FF2E9F)",
+            background: "linear-gradient(90deg, #00E5FF, #A855F7, #25D366)",
           },
         },
       }}
@@ -295,7 +242,7 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
         <Box sx={{ textAlign: "center", mb: 4 }}>
           <Box sx={{
             width: 64, height: 64, borderRadius: "50%",
-            background: "linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #FF2E9F 100%)",
+            background: "linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #25D366 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 16px",
             boxShadow: "0 0 20px rgba(0,229,255,0.4)",
@@ -313,7 +260,7 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
           </Typography>
           <Typography sx={{ color: "rgba(200,215,245,0.55)", fontSize: "0.875rem", fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.6 }}>
             Join our community to unlock withdrawal.
-            Verification is instant — just click and approve.
+            Verification is instant — just click and confirm.
           </Typography>
           <Box sx={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent)", mt: 3 }} />
         </Box>
@@ -331,7 +278,6 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
           errorMsg={telegramError}
           verifiedAt={telegramVerifiedAt}
         >
-          {/* Step 1a: Join the group */}
           <Button
             onClick={() => window.open(TELEGRAM_GROUP_URL, "_blank")}
             startIcon={<Icon icon="tabler:external-link" style={{ fontSize: "0.85rem" }} />}
@@ -348,56 +294,53 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
             1. Join Telegram Group
           </Button>
 
-          {/* Step 1b: Telegram Login Widget — renders the official button */}
           <Box>
             <Typography sx={{ color: "rgba(200,215,245,0.5)", fontSize: "0.75rem", mb: 1, fontFamily: '"Space Grotesk", sans-serif' }}>
               2. Then verify your membership:
             </Typography>
-            {/* The Telegram widget script injects a button here */}
             <Box id="telegram-widget-container" sx={{ minHeight: 40 }} />
           </Box>
         </SocialStep>
 
-        {/* ── Step 2: Twitter/X ── */}
+        {/* ── Step 2: WhatsApp Channel ── */}
         <SocialStep
           stepNum="2"
-          icon="tabler:brand-x"
-          iconBg="linear-gradient(135deg, #1a1a1a, #444)"
-          iconGlow="rgba(255,255,255,0.1)"
-          title="Follow BIGWHALE on X (Twitter)"
-          subtitle="Click the button below — approve in X app"
-          isVerified={twitterFollowed}
-          isLoading={twitterStatus === "loading"}
-          errorMsg={twitterError}
-          verifiedAt={twitterVerifiedAt}
+          icon="tabler:brand-whatsapp"
+          iconBg="linear-gradient(135deg, #128C7E, #25D366)"
+          iconGlow="rgba(37,211,102,0.4)"
+          title="Join BIGWHALE WhatsApp Channel"
+          subtitle="Join the channel, then click Confirm below"
+          isVerified={whatsappJoined}
+          isLoading={whatsappStatus === "loading"}
+          errorMsg={whatsappError}
+          verifiedAt={whatsappVerifiedAt}
         >
           <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
-            {/* Step 2a: Follow the account */}
+            {/* Step 2a: Open WhatsApp channel */}
             <Button
-              onClick={() => window.open(TWITTER_FOLLOW_URL, "_blank")}
+              onClick={() => window.open(WHATSAPP_CHANNEL_URL, "_blank")}
               startIcon={<Icon icon="tabler:external-link" style={{ fontSize: "0.85rem" }} />}
               sx={{
-                background: "linear-gradient(135deg, #1a1a1a, #444)",
+                background: "linear-gradient(135deg, #128C7E, #25D366)",
                 color: "#fff",
-                border: "1px solid rgba(255,255,255,0.2)",
                 fontFamily: '"Space Grotesk", sans-serif',
                 fontWeight: 600, fontSize: "0.82rem",
                 borderRadius: "10px", px: 2.5, py: 1,
                 transition: "all 0.2s ease",
-                "&:hover": { boxShadow: "0 0 12px rgba(255,255,255,0.15)", transform: "translateY(-1px)" },
+                "&:hover": { boxShadow: "0 0 14px rgba(37,211,102,0.5)", transform: "translateY(-1px)" },
               }}
             >
-              1. Follow on X
+              1. Join WhatsApp Channel
             </Button>
 
-            {/* Step 2b: Verify via OAuth */}
+            {/* Step 2b: Confirm join */}
             <Button
-              onClick={handleTwitterConnect}
-              disabled={twitterStatus === "loading"}
+              onClick={handleWhatsAppVerify}
+              disabled={whatsappStatus === "loading"}
               startIcon={
-                twitterStatus === "loading"
+                whatsappStatus === "loading"
                   ? <CircularProgress size={14} sx={{ color: "#fff" }} />
-                  : <Icon icon="tabler:brand-x" style={{ fontSize: "0.85rem" }} />
+                  : <Icon icon="tabler:check" style={{ fontSize: "0.85rem" }} />
               }
               sx={{
                 background: "linear-gradient(135deg, #00E5FF 0%, #00C2FF 100%)",
@@ -410,7 +353,7 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
                 "&.Mui-disabled": { background: "rgba(0,229,255,0.15)", color: "rgba(0,229,255,0.4)" },
               }}
             >
-              {twitterStatus === "loading" ? "Verifying..." : "2. Verify Follow"}
+              {whatsappStatus === "loading" ? "Verifying..." : "2. I've Joined"}
             </Button>
           </Box>
         </SocialStep>
@@ -447,7 +390,6 @@ const Withdrawal = () => {
   const user        = useSelector(state => state?.getCurrentUser?.user);
   const { address } = useAccount();
 
-  // Social verification state
   const bothConfirmed = useSelector(s => s.socialConfirm.bothConfirmed);
   const fetchStatus   = useSelector(s => s.socialConfirm.fetchStatus);
 
@@ -469,34 +411,13 @@ const Withdrawal = () => {
   const { kgcTokens: withdrawalAmountInKgc } = useGetKGCLiveTokens(withdrawalAmount);
   const { minWithdrawalAmountInKgc, minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
 
-  // ── Fetch social status from DB when userId is known ─────────────
+  // Fetch social status from DB when userId is known
   useEffect(() => {
     if (userId && fetchStatus === "idle") {
       dispatch(fetchSocialStatus(userId));
     }
   }, [userId, fetchStatus, dispatch]);
 
-  // ── Handle twitter_status query param when page loads ────────────
-  // (Twitter OAuth callback redirects back to /withdrawal?twitter_status=...)
-  useEffect(() => {
-    const { twitter_status, msg } = router.query;
-    if (!twitter_status) return;
-
-    if (twitter_status === "verified") {
-      dispatch(setTwitterVerified({}));
-      // Re-fetch from DB to get the saved username
-      if (userId) dispatch(fetchSocialStatus(userId));
-      router.replace("/withdrawal", undefined, { shallow: true });
-    } else if (twitter_status === "not_following") {
-      dispatch(setTwitterError(decodeURIComponent(msg || "You are not following BIGWHALE on X. Please follow and try again.")));
-      router.replace("/withdrawal", undefined, { shallow: true });
-    } else if (twitter_status === "error" || twitter_status === "cancelled") {
-      dispatch(setTwitterError(decodeURIComponent(msg || "Twitter verification failed. Please try again.")));
-      router.replace("/withdrawal", undefined, { shallow: true });
-    }
-  }, [router.query, userId]);
-
-  // ── Original useEffects — UNCHANGED ──────────────────────────────
   useEffect(() => {
     if (isSuccess && isMinWithdrawalUsdcFetched && totalStakedAmountInUSDC > 0 && (totalStakedAmountInUSDC < minWithdrawalAmountInUSDC)) {
       setError(`Minimum withdrawal allowed=${minWithdrawalAmountInUSDC || 0}`);
@@ -559,7 +480,6 @@ const Withdrawal = () => {
     }
   };
 
-  // ── handleSubmit: check social gate first ─────────────────────────
   const handleSubmit = async () => {
     if (!bothConfirmed) {
       setSocialGateOpen(true);
@@ -569,7 +489,6 @@ const Withdrawal = () => {
     withdrawAmount();
   };
 
-  // ── Called when both social verifications pass ────────────────────
   const handleBothVerified = () => {
     setSocialGateOpen(false);
     if (chain?.id !== ENV.chainId) { switchNetwork?.(ENV.chainId); return; }
@@ -624,7 +543,6 @@ const Withdrawal = () => {
 
   return (
     <>
-      {/* Social Gate Modal */}
       <SocialGateModal
         open={socialGateOpen}
         onClose={() => setSocialGateOpen(false)}
@@ -632,7 +550,6 @@ const Withdrawal = () => {
         userId={userId}
       />
 
-      {/* Original withdrawal UI — UNCHANGED */}
       <Card sx={{ p: 8 }}>
         <Card sx={{ border: 1 }}>
           <CardHeader

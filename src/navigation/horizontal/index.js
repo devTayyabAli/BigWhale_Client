@@ -20,7 +20,7 @@ const navigation = () => {
       icon: "tabler:currency",
       children: [
         {
-          title: "Stake BRC",
+          title: "Stake BW",
           path: "/buy-fund",
         },
       ],

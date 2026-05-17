@@ -31,6 +31,7 @@ import isMobile from 'is-mobile'
 import { resetCurrentUser } from 'src/store/apps/auth/currentUserSlice'
 import NetworkSelector from 'src/views/components/choose-network-modal'
 import defaultAuthConfig from 'src/configs/auth'
+import Image from 'next/image'
 
 // ── Animations ──────────────────────────────────────────────────────
 const floatAnim = keyframes`
@@ -208,8 +209,8 @@ const HeroPanel = () => (
       {/* BW Coin */}
       <Box
         sx={{
-          width: 120,
-          height: 120,
+          width: 200,
+          height: 200,
           borderRadius: '50%',
           background: 'linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #FF2E9F 100%)',
           display: 'flex',
@@ -225,7 +226,8 @@ const HeroPanel = () => (
           boxShadow: '0 0 30px rgba(0,229,255,0.5)',
         }}
       >
-        BW
+                     <Image src="/images/pages/pre-loader-new.png" alt="bw-logo" width="210" height="210"/>
+        
       </Box>
 
       <Typography
@@ -406,7 +408,8 @@ const LoginPage = () => {
                       animation: `${pulseGlow} 3s ease-in-out infinite`,
                     }}
                   >
-                    BW
+                                   <Image src="/images/pages/pre-loader-new.png" alt="bw-logo" width="70" height="70" />
+                   
                   </Box>
 
                   <Typography

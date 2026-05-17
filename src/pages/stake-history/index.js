@@ -37,9 +37,9 @@ const columns = [
     flex: 0.1,
     minWidth: 105,
     field: "package",
-    headerName: "PACKAGE (BRC)",
+    headerName: "PACKAGE (BW)",
     renderCell: ({ row }) => (
-      <Typography sx={{ color: "text.secondary" }}>{row?.package} BRC</Typography>
+      <Typography sx={{ color: "text.secondary" }}>{row?.package} BW</Typography>
     ),
   },
   {

@@ -218,7 +218,7 @@ const ResetPassword = () => {
                       Important note : Keep your account password safe & secure,
                       do not share with any one.
                       <Box sx={{ color: "#f16d75", fontSize: 13 }}>
-                        Strong Password like this BRC@token.0x9#
+                        Strong Password like this BW@token.0x9#
                       </Box>
                     </Box>
                   </Grid>

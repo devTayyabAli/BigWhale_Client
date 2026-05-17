@@ -24,7 +24,7 @@ export const REFERRAL_STATS_ENDPOINT = '/referral/stats';
 export const CREATE_SUPPORT_TICKET_ENDPOINT = '/support';
 
 // ── BIGWHALE Social Verification (OAuth — no username input) ─────────
-export const VERIFY_TELEGRAM_ENDPOINT  = '/auth/verify-telegram';
-export const TWITTER_AUTH_URL_ENDPOINT = '/auth/twitter-auth-url';
-export const SOCIAL_STATUS_ENDPOINT    = '/auth/social-status';
+export const VERIFY_TELEGRAM_ENDPOINT   = '/auth/verify-telegram';
+export const VERIFY_WHATSAPP_ENDPOINT   = '/auth/verify-whatsapp';
+export const SOCIAL_STATUS_ENDPOINT     = '/auth/social-status';
 

@@ -11,6 +11,7 @@ const Layout = props => {
 
   // ** Ref
   const isCollapsed = useRef(settings.navCollapsed)
+
   useEffect(() => {
     if (hidden) {
       if (settings.navCollapsed) {
@@ -29,11 +30,19 @@ const Layout = props => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hidden])
-  if (settings.layout === 'horizontal') {
-    return <HorizontalLayout {...props}>{children}</HorizontalLayout>
+
+  // On mobile, always treat the nav as expanded — the drawer is full-width.
+  // This prevents the icon-only collapsed state from rendering on mobile
+  // even for the first frame before the useEffect fires.
+  const effectiveSettings = hidden
+    ? { ...settings, navCollapsed: false }
+    : settings
+
+  if (effectiveSettings.layout === 'horizontal') {
+    return <HorizontalLayout {...props} settings={effectiveSettings}>{children}</HorizontalLayout>
   }
 
-  return <VerticalLayout {...props}>{children}</VerticalLayout>
+  return <VerticalLayout {...props} settings={effectiveSettings}>{children}</VerticalLayout>
 }
 
 export default Layout

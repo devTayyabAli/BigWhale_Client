@@ -49,6 +49,8 @@ const Drawer = props => {
     open: navVisible,
     onOpen: () => setNavVisible(true),
     onClose: () => setNavVisible(false),
+    // Prevent accidental swipe-to-open on MetaMask mobile browser
+    disableSwipeToOpen: true,
     ModalProps: {
       keepMounted: true // Better open performance on mobile.
     }

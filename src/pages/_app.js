@@ -251,12 +251,13 @@ const App = (props) => {
     const excludedPaths = ["/set-password/[token]", "/login", "/signup", "/wallet-connection-error-guest", "/wallet-connection-error"];
 
     if (router && !excludedPaths.includes(router.pathname)) {
-      // Only redirect if on mobile, no injected provider, and no wallet connected
-      if (isMobile() && !window?.ethereum && !user?.data?.walletAddress) {
+      // Only redirect if: on mobile, no injected provider, user IS logged in but has no wallet
+      // Do NOT redirect if user is not logged in — AuthGuard handles that separately
+      if (isMobile() && !window?.ethereum && user?.data?._id && !user?.data?.walletAddress) {
         router.push("/wallet-connection-error-guest");
       }
     }
-  }, [router.pathname, user?.data?.walletAddress]);
+  }, [router.pathname, user?.data?.walletAddress, user?.data?._id]);
 
   return (
     <>

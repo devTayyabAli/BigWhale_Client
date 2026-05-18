@@ -92,15 +92,30 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: [
-    new WalletConnectConnector({ // projectId is crucial here for WalletConnect protocol
+    new WalletConnectConnector({
       chains,
-      options: { projectId, showQrModal: false, metadata },
+      options: {
+        projectId,
+        showQrModal: false,
+        metadata,
+        // Persist WalletConnect session across page reloads (critical for MetaMask mobile)
+        storageOptions: {
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        },
+      },
     }),
     new EIP6963Connector({ chains }),
-    new InjectedConnector({ chains, options: { shimDisconnect: true } }),
+    new InjectedConnector({
+      chains,
+      options: {
+        shimDisconnect: true,
+        // Do NOT shimDisconnect for MetaMask mobile — it clears the session on reload
+        // shimDisconnect only applies to desktop injected wallets
+      },
+    }),
   ],
   publicClient,
-  webSocketPublicClient, // Add this if you need WebSocket support
+  webSocketPublicClient,
 });
 
 createWeb3Modal({

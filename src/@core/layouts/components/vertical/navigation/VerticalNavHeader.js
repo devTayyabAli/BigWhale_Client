@@ -45,14 +45,17 @@ const VerticalNavHeader = props => {
 
   const theme = useTheme()
   const { navCollapsed } = settings
-  const menuCollapsedStyles = navCollapsed && !navHover ? { opacity: 0 } : { opacity: 1 }
+
+  // On mobile (hidden=true), the drawer is always full-width — never treat as collapsed
+  const isCollapsed = !hidden && navCollapsed && !navHover
+  const menuCollapsedStyles = isCollapsed ? { opacity: 0 } : { opacity: 1 }
 
   const menuHeaderPaddingLeft = () => {
-    if (navCollapsed && !navHover) {
+    if (isCollapsed) {
       if (userNavMenuBranding) return 0
       return (collapsedNavWidth - navigationBorderWidth - 34) / 8
     }
-    return 4  // fixed left padding when expanded — don't compute dynamically
+    return 4
   }
 
   const MenuLockedIcon = () => userMenuLockedIcon || <Icon icon='tabler:circle-dot' />
@@ -67,8 +70,8 @@ const VerticalNavHeader = props => {
           {/* BW Coin */}
           <Box
             sx={{
-              width: navCollapsed && !navHover ? 34 : 36,
-              height: navCollapsed && !navHover ? 34 : 36,
+              width: isCollapsed ? 34 : 36,
+              height: isCollapsed ? 34 : 36,
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #FF2E9F 100%)',
               display: 'flex',
@@ -91,8 +94,7 @@ const VerticalNavHeader = props => {
             sx={{
               ...menuCollapsedStyles,
               transition: 'opacity .25s ease-in-out',
-              // Width constraint so it doesn't push the collapse button off screen
-              maxWidth: navCollapsed && !navHover ? 0 : 160,
+              maxWidth: isCollapsed ? 0 : 160,
               overflow: 'hidden',
             }}
           >

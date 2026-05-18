@@ -23,44 +23,41 @@ const AuthProvider = ({ children }) => {
   const dispatch = useDispatch();
   const [user, setUser] = useState(defaultProvider.user);
   const [loading, setLoading] = useState(defaultProvider.loading);
-  const storedToken =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem(authConfig.storageTokenKeyName)
-      : false;
   const router = useRouter();
   useEffect(() => {
     const initAuth = async () => {
-      const userData = JSON.parse(localStorage.getItem(authConfig.storageUserDataKeyName));
-      if (storedToken) {
-        setUser(userData);
+      const storedToken = typeof window !== 'undefined'
+        ? window.localStorage.getItem(authConfig.storageTokenKeyName)
+        : null
+      const userData = storedToken
+        ? JSON.parse(localStorage.getItem(authConfig.storageUserDataKeyName))
+        : null
+
+      if (storedToken && userData) {
+        // Restore session from localStorage — no server round-trip needed
+        setUser(userData)
       } else {
-        localStorage.removeItem(authConfig.storageUserDataKeyName);
-        setUser(null);
+        // Clear any stale partial data
+        localStorage.removeItem(authConfig.storageUserDataKeyName)
+        setUser(null)
       }
-      setLoading(false);
-      if (
-        authConfig.onTokenExpiration === "logout" &&
-        !router.pathname.includes("login")
-      ) {
-        router.replace("/login");
-      }
-    };
-    initAuth();
-  }, [storedToken, router]);
+      setLoading(false)
+    }
+    initAuth()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleLogin = (params, errorCallback) => {
     axios
       .post(authConfig.loginEndpoint, params)
       .then(async (response) => {
-        params.rememberMe
-          ? window.localStorage.setItem(authConfig.storageTokenKeyName, response.data.accessToken)
-          : null;
-        const returnUrl = router.query.returnUrl;
+        // Always persist session — MetaMask mobile reloads the page after
+        // every transaction, so we must always store the token and user data.
+        window.localStorage.setItem(authConfig.storageTokenKeyName, response.data.accessToken)
+        window.localStorage.setItem('userData', JSON.stringify(response.data.userData))
 
+        const returnUrl = router.query.returnUrl;
         setUser({ ...response.data.userData });
-        params.rememberMe
-          ? window.localStorage.setItem("userData", JSON.stringify(response.data.userData))
-          : null;
         const redirectURL = returnUrl && returnUrl !== "/" ? returnUrl : "/";
         router.replace(redirectURL);
       })

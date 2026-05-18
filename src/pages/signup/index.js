@@ -19,7 +19,6 @@ import CustomTextField from 'src/@core/components/mui/text-field'
 import SocketContext from 'src/context/Socket'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { useAccount, useContractWrite, useDisconnect, useWaitForTransaction } from 'wagmi'
-import { ethers } from 'ethers'
 import { CONTRACT_INFO } from 'src/contract'
 import { useSwitchNetwork } from 'wagmi'
 import useValidateAccount from 'src/hooks/useValidateAccount'
@@ -34,6 +33,7 @@ import { GET_REFERRAL_DETAIL_ENDPOINT } from 'src/api/apiEndPoint'
 import { toast } from 'react-hot-toast'
 import { useContractRegister } from 'src/hooks/useContractRegister'
 import useGetRegisterUSDCTokens from 'src/hooks/useGetRegisterUSDCTokens'
+import useGetRegistrationFee from 'src/hooks/useGetRegistrationFee'
 import { createTxLog } from 'src/store/apps/transaction/transactionLogsSlice'
 import { deletePendingUser } from 'src/store/apps/auth/signupSlice'
 import isMobile from 'is-mobile'
@@ -195,11 +195,15 @@ const Register = () => {
   const { isError: tokenError, error: transferTokenTxError, data: tokenTx, isLoading: isTransferInprogress, isSuccess: isTokenTxSent, write: transferTokens } = useContractWrite({ address: CONTRACT_INFO.main.address, abi: CONTRACT_INFO.main.abi, functionName: 'registerUser' })
   const { isSuccess: tokenTransferedCompleted, isError: tokenWaitError, error: tokenTxWaitError } = useWaitForTransaction({ hash: tokenTx?.hash })
   const { availableUSDC, isUSDCBlncFetched } = useGetRegisterUSDCTokens(address)
+  const { registrationFee, isFeeFetched } = useGetRegistrationFee()
 
   useEffect(() => {
     if (isApprovalCompleted) {
       const t = setTimeout(() => {
-        transferTokens({ args: [ethers.utils.parseEther('5'), referralDetails?.walletAddress], from: address })
+        // Pass the same fee that was approved — read from contract, not hardcoded
+        if (registrationFee) {
+          transferTokens({ args: [registrationFee, referralDetails?.walletAddress], from: address })
+        }
       }, 3000)
       return () => clearTimeout(t)
     }
@@ -226,10 +230,20 @@ const Register = () => {
     let flag = false
     if (found) { const r = await handleDeletePendingUser(); if (r) { localStorage.removeItem('pendingUser'); flag = true } } else { flag = true }
     if (!flag) return toast.error('Registration failed, please try again!', { duration: 5000 })
+
+    // Guard: fee must be loaded from contract before proceeding
+    if (!registrationFee) {
+      toast.error('Unable to fetch registration fee. Please try again.', { duration: 5000 })
+      setLoader(null)
+      return
+    }
+
     const res = await dispatch(registerUser({ ...data, referredBy: referralDetails ? referralDetails?._id : '' }))
     if (res?.payload?.data?._id) localStorage.setItem('pendingUser', res?.payload?.data?._id)
     if (res?.meta?.requestStatus !== 'fulfilled') { setLoader(null); return }
-    approveTokens({ args: [CONTRACT_INFO.main.address, ethers.utils.parseEther('5')], from: address })
+
+    // Use the fee read from the contract — never hardcode it
+    approveTokens({ args: [CONTRACT_INFO.main.address, registrationFee], from: address })
   }
 
   useEffect(() => { handleError() }, [isApprovalError, tokenError, approveWaitError, tokenWaitError])
@@ -450,8 +464,8 @@ const Register = () => {
                 />
 
                 {/* Submit */}
-                <NeonButton fullWidth type='submit' disabled={!formik?.isValid || !termsChecked || (Number(availableUSDC) === 0 && isUSDCBlncFetched) || !!loader} sx={{ mb: 2.5 }}>
-                  {loader ? 'Registering...' : 'Create Account'}
+                <NeonButton fullWidth type='submit' disabled={!formik?.isValid || !termsChecked || (Number(availableUSDC) === 0 && isUSDCBlncFetched) || !!loader || !isFeeFetched} sx={{ mb: 2.5 }}>
+                  {loader ? 'Registering...' : !isFeeFetched ? 'Loading...' : 'Create Account'}
                 </NeonButton>
 
                 {Number(availableUSDC) === 0 && isUSDCBlncFetched && (

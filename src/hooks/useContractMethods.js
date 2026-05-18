@@ -18,7 +18,7 @@ const useContractMethods = (tokensToFetch) => {
     useContractRead({
       address: CONTRACT_INFO.main.address,
       abi: CONTRACT_INFO.main.abi,
-      functionName: "getBRCPrice",
+      functionName: "getBWPrice",
       args: [1000000000000000000],
     });
 

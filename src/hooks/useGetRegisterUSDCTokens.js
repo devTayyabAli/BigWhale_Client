@@ -7,7 +7,7 @@ import { CONTRACT_INFO } from "src/contract";
 const useGetRegisterUSDCTokens = (address) => {
   const [availableUSDC, setAvailableUSDC] = useState(null);
 
-  //get one live kgc token rate
+  //get one live BW token rate
   const {
     data: usdc,
     isSuccess: isUSDCBlncFetched,

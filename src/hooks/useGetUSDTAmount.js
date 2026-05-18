@@ -17,6 +17,7 @@ const useGetUSDTAmount = (address) => {
       setTokenBlnc(ethers?.utils?.formatUnits(data || 0, "ether"));
     }
   }, [data]);
+  console.log("tokenBlnc",tokenBlnc)
 
   return { tokenBlnc: tokenBlnc, isSuccess:isFetched, refetch };
 };

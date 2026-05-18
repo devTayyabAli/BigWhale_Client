@@ -12,7 +12,7 @@ const useGetUSDCTokens = (kgc) => {
   const { data, isFetched,isError,refetch,error  } = useContractRead({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "getBRCPrice",
+    functionName: "getBWPrice",
     args: [ethers.utils.parseEther(`${Number(Number(kgc).toFixed(10)) || 0}`)],
     enabled: !!kgc,
   });

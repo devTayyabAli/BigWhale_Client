@@ -14,7 +14,7 @@ const useSellFundsKGC = () => {
   } = useContractWrite({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "sellBRC",
+    functionName: "sellBW",
   });
   const {
     isLoading: isSellFundsTokensWaiting,

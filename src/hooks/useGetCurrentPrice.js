@@ -14,7 +14,7 @@ const useGetCurrentPrice = () => {
   } = useContractRead({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "currentBRCPrice",
+    functionName: "currentBWPrice",
   });
   useEffect(() => {
     if (liveRate) {

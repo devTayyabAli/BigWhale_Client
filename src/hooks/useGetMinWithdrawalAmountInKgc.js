@@ -26,7 +26,7 @@ const useGetMinWithdrawalAmountInKgc = () => {
   } = useContractRead({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "getBRCPrice",
+    functionName: "getBWPrice",
     args: [
       minWithdrawalKgc 
     ],

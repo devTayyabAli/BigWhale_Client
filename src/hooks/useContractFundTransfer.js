@@ -20,7 +20,7 @@ const useContractFundTransfer = () => {
   } = useContractWrite({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "sendBRC",
+    functionName: "sendBW",
   });
 
   const {

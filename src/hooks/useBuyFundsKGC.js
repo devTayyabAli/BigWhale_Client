@@ -14,7 +14,7 @@ const useBuyFundsKGC = () => {
   } = useContractWrite({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "buyBRC",
+    functionName: "buyBW",
   });
   const {
     isLoading: isBuyFundsTokensWaiting,

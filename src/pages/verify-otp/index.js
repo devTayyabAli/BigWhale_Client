@@ -57,25 +57,25 @@ const LinkStyled = styled(Link)(({ theme }) => ({
 
 const schema = yup.object().shape({
   accountVerificationCode: yup
-  .mixed()
-  .test(
-    'no-spaces',
-    'Account verification code must not contain spaces.',
-    value => !/\s/.test(value)
-  )
-  .test(
-    'is-number',
-    'Account verification code must be a number.',
-    value => !isNaN(value)
-  )
-  .test(
-    'exact-length',
-    'Account verification code must be exactly 6 characters.',
-    value => {
-      const stringValue = String(value)?.replace(/\D/g, '');
-      return stringValue?.length === 6;
-    }
-  ),
+    .mixed()
+    .test(
+      'no-spaces',
+      'Account verification code must not contain spaces.',
+      value => !/\s/.test(value)
+    )
+    .test(
+      'is-number',
+      'Account verification code must be a number.',
+      value => !isNaN(value)
+    )
+    .test(
+      'exact-length',
+      'Account verification code must be exactly 6 characters.',
+      value => {
+        const stringValue = String(value)?.replace(/\D/g, '');
+        return stringValue?.length === 6;
+      }
+    ),
 });
 
 const VerifyOtp = () => {
@@ -145,8 +145,8 @@ const VerifyOtp = () => {
     skin === "bordered"
       ? "auth-v2-login-illustration-bordered"
       : settings.mode === "dark"
-      ? "Logo-signup"
-      : "Logo-signup";
+        ? "Logo-signup"
+        : "Logo-signup";
 
   const backgroundImageUrl = "BG-new-kgc";
 
@@ -163,17 +163,17 @@ const VerifyOtp = () => {
                 alignItems: "center",
                 borderRadius: "20px",
                 justifyContent: "center",
-                backgroundImage: `url(/images/pages/${backgroundImageUrl}.jpg)`,
+                backgroundImage: `url(/images/pages/logInPic.jpeg)`,
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
                 backgroundSize: "cover",
                 margin: () => spacing(8, 0, 8, 8),
               }}
             >
-              <LoginIllustration
+              {/* <LoginIllustration
                 alt="login-illustration"
                 src={`/images/pages/${imageSource}.png`}
-              />
+              /> */}
               <FooterIllustrationsV2 />
             </Box>
           ) : null}

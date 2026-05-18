@@ -14,7 +14,7 @@ const useGetKGCLiveTokens = (usdcTokens) => {
   } = useContractRead({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "getBRCAmount",
+    functionName: "getBWAmount",
     args: [usdcTokens && ethers.utils.parseEther(`${usdcTokens || 0}`)],
     enabled:!!usdcTokens
   });

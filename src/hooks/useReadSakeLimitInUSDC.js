@@ -9,14 +9,14 @@ const useReadSakeLimitInUSDC = (minKgc,maxKgc) => {
   const { data:minUSDC, isSuccess:isMinUSDCSuccess, refetch:refetchMinUSDC } = useContractRead({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "getBRCPrice",
+    functionName: "getBWPrice",
     args: [ethers.utils.parseEther(`${minKgc}`|| 0)],
     enabled:!!minKgc
   });
   const { data:maxUSDC, isSuccess:isMaxUSDCSuccess, refetch:refetchMaxUSDC } = useContractRead({
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
-    functionName: "getBRCPrice",
+    functionName: "getBWPrice",
     args: [ethers.utils.parseEther(`${maxKgc}`|| 0)],
     enabled:!!maxKgc
   });

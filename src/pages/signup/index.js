@@ -233,7 +233,8 @@ const Register = () => {
 
     // Guard: fee must be loaded from contract before proceeding
     if (!registrationFee) {
-      toast.error('Unable to fetch registration fee. Please try again.', { duration: 5000 })
+      console.warn('[signup] registrationFee not yet loaded, retrying...')
+      toast.error('Still loading registration fee. Please wait a moment and try again.', { duration: 4000 })
       setLoader(null)
       return
     }
@@ -464,8 +465,8 @@ const Register = () => {
                 />
 
                 {/* Submit */}
-                <NeonButton fullWidth type='submit' disabled={!formik?.isValid || !termsChecked || (Number(availableUSDC) === 0 && isUSDCBlncFetched) || !!loader || !isFeeFetched} sx={{ mb: 2.5 }}>
-                  {loader ? 'Registering...' : !isFeeFetched ? 'Loading...' : 'Create Account'}
+                <NeonButton fullWidth type='submit' disabled={!formik?.isValid || !termsChecked || (Number(availableUSDC) === 0 && isUSDCBlncFetched) || !!loader} sx={{ mb: 2.5 }}>
+                  {loader ? 'Registering...' : 'Create Account'}
                 </NeonButton>
 
                 {Number(availableUSDC) === 0 && isUSDCBlncFetched && (

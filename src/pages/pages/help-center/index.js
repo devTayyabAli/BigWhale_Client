@@ -55,14 +55,16 @@ const HelpCenter = ({ apiData }) => {
   )
 }
 
-export const getStaticProps = async () => {
-  const res = await axios.get('/pages/help-center/landing')
-  const apiData = res.data
+// Replaced getStaticProps with getServerSideProps.
+// The original called a fake-db mock endpoint at build time which doesn't
+// exist in production, causing Docker build failures.
+export const getServerSideProps = async () => {
+  try {
+    const res = await axios.get('/pages/help-center/landing')
 
-  return {
-    props: {
-      apiData
-    }
+    return { props: { apiData: res.data } }
+  } catch {
+    return { props: { apiData: null } }
   }
 }
 

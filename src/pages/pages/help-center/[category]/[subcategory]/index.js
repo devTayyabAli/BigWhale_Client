@@ -8,34 +8,18 @@ const HelpCenterSubcategoryPage = ({ apiData }) => {
   return apiData ? <HelpCenterSubcategory data={apiData.data} activeTab={apiData.activeTab} /> : null
 }
 
-export const getStaticPaths = async () => {
-  const res = await axios.get('/pages/help-center/subcategory', {
-    params: { category: 'getting-started' }
-  })
-  const apiData = await res.data
-  const paths = []
-  apiData.categories.forEach(category =>
-    category.subCategories.forEach(subcategory => {
-      paths.push({ params: { category: `${category.slug}`, subcategory: `${subcategory.slug}` } })
+// Replaced getStaticPaths + getStaticProps with getServerSideProps.
+// The original implementation called a fake-db mock endpoint at build time
+// which doesn't exist in production, causing Docker build failures.
+export const getServerSideProps = async ({ params }) => {
+  try {
+    const res = await axios.get('/pages/help-center/subcategory', {
+      params: { category: params?.category, subcategory: params?.subcategory }
     })
-  )
 
-  return {
-    paths,
-    fallback: false
-  }
-}
-
-export const getStaticProps = async ({ params }) => {
-  const res = await axios.get('/pages/help-center/subcategory', {
-    params: { category: params?.category, subcategory: params?.subcategory }
-  })
-  const apiData = await res.data
-
-  return {
-    props: {
-      apiData
-    }
+    return { props: { apiData: res.data } }
+  } catch {
+    return { props: { apiData: null } }
   }
 }
 

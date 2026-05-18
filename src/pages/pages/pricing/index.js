@@ -57,14 +57,15 @@ const Pricing = ({ apiData }) => {
 }
 
 export const getStaticProps = async () => {
-  const res = await axios.get('/pages/pricing')
-  const apiData = res.data
-
-  return {
-    props: {
-      apiData
-    }
+  let apiData = { pricingPlans: [] }
+  try {
+    const res = await axios.get('/pages/pricing')
+    apiData = res.data
+  } catch {
+    // Backend not available at build time — render with empty data
   }
+
+  return { props: { apiData } }
 }
 
 export default Pricing

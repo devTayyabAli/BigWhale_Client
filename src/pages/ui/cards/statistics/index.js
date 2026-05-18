@@ -87,14 +87,15 @@ const CardStatistics = ({ apiData }) => {
 }
 
 export const getStaticProps = async () => {
-  const res = await axios.get('/cards/statistics')
-  const apiData = res.data
-
-  return {
-    props: {
-      apiData
-    }
+  let apiData = { statsSquare: [], statsHorizontal: [], statsWithAreaChart: [], statsVertical: [] }
+  try {
+    const res = await axios.get('/cards/statistics')
+    apiData = res.data
+  } catch {
+    // Backend not available at build time — render with empty data
   }
+
+  return { props: { apiData } }
 }
 
 export default CardStatistics

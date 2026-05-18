@@ -59,14 +59,15 @@ const FAQ = ({ apiData }) => {
 }
 
 export const getStaticProps = async () => {
-  const res = await axios.get('/pages/faqs')
-  const apiData = res.data
-
-  return {
-    props: {
-      apiData
-    }
+  let apiData = null
+  try {
+    const res = await axios.get('/pages/faqs')
+    apiData = res.data
+  } catch {
+    // Backend not available at build time — render with empty data
   }
+
+  return { props: { apiData } }
 }
 
 export default FAQ

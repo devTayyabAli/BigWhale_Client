@@ -8,6 +8,7 @@ const AccountSettingsTab = ({ tab, apiPricingPlanData }) => {
   return <AccountSettings tab={tab} apiPricingPlanData={apiPricingPlanData} />
 }
 
+// Static paths are safe — no API call needed here
 export const getStaticPaths = () => {
   return {
     paths: [
@@ -21,14 +22,22 @@ export const getStaticPaths = () => {
   }
 }
 
+// Replaced axios call with a safe fallback.
+// The original called /pages/pricing (fake-db) at build time which doesn't
+// exist in production, causing Docker build failures.
 export const getStaticProps = async ({ params }) => {
-  const res = await axios.get('/pages/pricing')
-  const data = res.data
+  let apiPricingPlanData = []
+  try {
+    const res = await axios.get('/pages/pricing')
+    apiPricingPlanData = res.data?.pricingPlans ?? []
+  } catch {
+    // Backend not available at build time — render with empty data
+  }
 
   return {
     props: {
       tab: params?.tab,
-      apiPricingPlanData: data.pricingPlans
+      apiPricingPlanData
     }
   }
 }

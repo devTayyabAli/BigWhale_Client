@@ -44,14 +44,15 @@ const DialogExamples = ({ apiPricingPlanData }) => (
 )
 
 export const getStaticProps = async () => {
-  const res = await axios.get('/pages/pricing')
-  const data = res.data
-
-  return {
-    props: {
-      apiPricingPlanData: data.pricingPlans
-    }
+  let apiPricingPlanData = []
+  try {
+    const res = await axios.get('/pages/pricing')
+    apiPricingPlanData = res.data?.pricingPlans ?? []
+  } catch {
+    // Backend not available at build time — render with empty data
   }
+
+  return { props: { apiPricingPlanData } }
 }
 
 export default DialogExamples

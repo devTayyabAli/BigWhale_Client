@@ -50,12 +50,14 @@ import {
   sellFund,
 } from "src/store/apps/transaction/transactionSlice";
 import useGetCurrentPrice from "src/hooks/useGetCurrentPrice";
-import { el } from "date-fns/locale";
+import { usePendingTx } from "src/hooks/usePendingTx";
+
 const SellFunds = () => {
   const { address } = useAccount();
   const dispatch = useDispatch();
   const user = useSelector((state) => state?.login?.user);
   const { user: userData } = useSelector((state) => state?.getCurrentUser);
+  const { savePendingTx, clearPendingTx } = usePendingTx('sell-funds');
   const selectAvailableAmountToConvert = useSelector((state) => state?.completeTransactionEvents?.availableAmountToConvert?.availableAmountToConvert);
 
 
@@ -115,6 +117,7 @@ const SellFunds = () => {
   useEffect(() => {
     if (isSellFundsCompleted) {
       dispatch(completeSellFundEvent(sellFundsSentTx?.hash));
+      clearPendingTx();
     }
   }, [isSellFundsCompleted]);
   useEffect(() => {
@@ -124,6 +127,7 @@ const SellFunds = () => {
       isApproveSentError ||
       isApprovalError
     ) {
+      clearPendingTx();
       const error =
         sellFundsSentError ||
         sellFundsTxError ||
@@ -213,8 +217,8 @@ const SellFunds = () => {
     );
   };
   useEffect(() => {
-
     if (isApprovalCompleted) {
+      savePendingTx('approval-complete');
       let amount = 0
       if (Number(Number(sellAmount).toFixed(6)) === Number(Number(availableKGC).toFixed(6))) {
         amount = availableKGC

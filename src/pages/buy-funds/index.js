@@ -44,6 +44,8 @@ import useApproveUSDCtokens from "src/hooks/useApproveUSDCTokens";
 import { buyFund, completeBuyFund } from "src/store/apps/transaction/transactionSlice";
 import useGetUSDTAmount from "src/hooks/useGetUSDTAmount";
 import useGetCurrentPrice from "src/hooks/useGetCurrentPrice";
+import useGetBuyLimits from "src/hooks/useGetBuyLimits";
+import { usePendingTx } from "src/hooks/usePendingTx";
 
 const BuyFunds = () => {
   const { address } = useAccount();
@@ -55,8 +57,11 @@ const BuyFunds = () => {
   const [buyFundsAmount, setBuyFundsAmount] = useState(null);
   const [contribution, setContribution] = useState(true);
   const [kgcAmount, setKGCAmount] = useState(0);
-  const [buyRecord,setBuyRecord]=useState(null)
+  const [buyRecord, setBuyRecord] = useState(null);
   const [error, setError] = useState(null);
+
+  // Persist pending tx across MetaMask mobile page reloads
+  const { savePendingTx, clearPendingTx, isRestored } = usePendingTx('buy-funds');
   const { switchNetwork } = useSwitchNetwork({
     onSuccess(data) {
       addStake();
@@ -104,6 +109,7 @@ const BuyFunds = () => {
   useEffect(() => {
     if (isBuyFundsCompleted) {
       dispatch(completeBuyFundEvent(buyFundsSentTx?.hash));
+      clearPendingTx(); // tx confirmed — clear saved state
     }
   }, [isBuyFundsCompleted]);
   useEffect(() => {
@@ -122,6 +128,7 @@ const BuyFunds = () => {
           error: JSON.stringify(error?.message),
         })
       );
+      clearPendingTx(); // clear on error too
       toast.error("failed, Please try again after some time.");
     }
   }, [isBuyFundsSentError, isBuyFundsError, isApproveSentError || isApprovalError]);
@@ -194,12 +201,14 @@ const BuyFunds = () => {
   };
   useEffect(() => {
     if (isApprovalCompleted) {
-      let  amount=0
+      let amount = 0
       if(Number(Number(buyFundsAmount).toFixed(6))===Number(Number(availableUSDC).toFixed(6))){
         amount=availableUSDC
       }else {
         amount=buyFundsAmount
       }
+      // Save pending tx state before buyBW call — MetaMask mobile may reload the page
+      savePendingTx('approval-complete')
       buyFundsKGC({
         args: [ethers.utils.parseEther(`${amount}`)],
         from: address,

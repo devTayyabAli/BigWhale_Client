@@ -63,6 +63,7 @@ import { createEmotionCache } from "src/@core/utils/create-emotion-cache";
 
 // ** Web3 Imports
 import { Web3Modal } from "src/context/Web3Modal";
+import { useWalletPersist } from "src/hooks/useWalletPersist";
 
 // ** Prismjs Styles
 import "prismjs";
@@ -123,6 +124,14 @@ const Guard = ({ children, authGuard, guestGuard }) => {
 };
 
 // ** Configure JSS & ClassName
+
+// Inner component that runs inside WagmiConfig — persists wallet address to localStorage
+// so the app can show the correct wallet immediately on reload before autoConnect completes
+const WalletPersistProvider = ({ children }) => {
+  useWalletPersist()
+  return children
+}
+
 const App = (props) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
   const [socket, setSocket] = useState(undefined);
@@ -313,6 +322,7 @@ const App = (props) => {
       />
 
       <Web3Modal>
+        <WalletPersistProvider>
         <SocketContext.Provider value={socket}>
           <Provider store={store}>
             <CacheProvider value={emotionCache}>
@@ -469,6 +479,7 @@ const App = (props) => {
             </CacheProvider>
           </Provider>
         </SocketContext.Provider>
+        </WalletPersistProvider>
       </Web3Modal>
       {isConfettiActive && (
         <div

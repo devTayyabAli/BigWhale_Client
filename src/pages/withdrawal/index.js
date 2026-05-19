@@ -51,6 +51,7 @@ import useGetUSDCTokens from "src/hooks/useGetUSDCTokens";
 import { ENV } from "src/configs/env";
 import { createTxLog } from "src/store/apps/transaction/transactionLogsSlice";
 import useGetMinWithdrawalAmountInKgc from "src/hooks/useGetMinWithdrawalAmountInKgc";
+import { usePendingTx } from "src/hooks/usePendingTx";
 import Icon from "src/@core/components/icon";
 
 // ** Next
@@ -390,6 +391,9 @@ const Withdrawal = () => {
   const user        = useSelector(state => state?.getCurrentUser?.user);
   const { address } = useAccount();
 
+  // Persist pending tx across MetaMask mobile page reloads
+  const { savePendingTx, clearPendingTx } = usePendingTx('withdrawal');
+
   const bothConfirmed = useSelector(s => s.socialConfirm.bothConfirmed);
   const fetchStatus   = useSelector(s => s.socialConfirm.fetchStatus);
 
@@ -436,6 +440,7 @@ const Withdrawal = () => {
       }));
       toast.error(err.message, { duration: 2000 });
       setLoader(false);
+      clearPendingTx(); // clear on error
     }
   }, [isWithdrawSentError, isWithdrawalError]);
 
@@ -448,7 +453,10 @@ const Withdrawal = () => {
   }, [isWithdrawalError]);
 
   useEffect(() => {
-    if (isWithdrawalCompleted) dispatch(completeWithdraw(withdrawSentTx?.hash));
+    if (isWithdrawalCompleted) {
+      dispatch(completeWithdraw(withdrawSentTx?.hash));
+      clearPendingTx();
+    }
   }, [isWithdrawalCompleted]);
 
   const truncateDecimals = (number, digits) => {
@@ -466,6 +474,7 @@ const Withdrawal = () => {
           const amount = withdrawalAmountFromContract > data?.stakingAmount
             ? data?.stakingAmount
             : withdrawalAmountFromContract;
+          savePendingTx('withdraw-sent'); // save before withdrawFunds call
           withdrawFunds({
             args: [Number(ethers.utils.parseEther(`${truncateDecimals(amount, 7)}`))],
             from: address,

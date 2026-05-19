@@ -57,6 +57,7 @@ import { ENV } from "src/configs/env";
 import { formatNumber, toFixedDecimal } from "src/constants/common";
 import useReadSakeLimitInUSDC from "src/hooks/useReadSakeLimitInUSDC";
 import useGetCurrentPrice from "src/hooks/useGetCurrentPrice";
+import { usePendingTx } from "src/hooks/usePendingTx";
 const Stake = () => {
   const { address } = useAccount();
   const dispatch = useDispatch();
@@ -68,8 +69,11 @@ const Stake = () => {
   const [stakeAmount, setStakeAmount] = useState(null);
   const [contribution, setContribution] = useState(true);
   const [kgcAmount, setKGCAmount] = useState(0);
-  const [minMaxError,setMinMaxError]=useState(null)
+  const [minMaxError, setMinMaxError] = useState(null);
   const [error, setError] = useState(null);
+
+  // Persist pending tx across MetaMask mobile page reloads
+  const { savePendingTx, clearPendingTx } = usePendingTx('stake');
   const { switchNetwork } = useSwitchNetwork({
     onSuccess(data) {
       addStake();
@@ -119,6 +123,7 @@ const Stake = () => {
   useEffect(() => {
     if (isstakeCompleted) {
       dispatch(completeStack(stakeSentTx?.hash));
+      clearPendingTx(); // tx confirmed — clear saved state
     }
   }, [isstakeCompleted]);
   useEffect(() => {
@@ -128,6 +133,7 @@ const Stake = () => {
       isApproveSentError ||
       isApprovalError
     ) {
+      clearPendingTx(); // clear on error
       const error =
         stakeSentError || stakeTxError || approveSentError || approvalTxError;
       dispatch(
@@ -196,6 +202,7 @@ const Stake = () => {
   };
   useEffect(() => {
     if (isApprovalCompleted) {
+      savePendingTx('approval-complete'); // save before stakeKgcTokens call
       stakeKgcTokens({
         args: [ethers.utils.parseEther(`${roundKgcAmount(stakeAmountInKGC)}`)],
         from: address,

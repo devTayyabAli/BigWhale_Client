@@ -1,23 +1,28 @@
 // ** Web3 Imports
 import { createWeb3Modal } from "@web3modal/wagmi/react";
 import { WagmiConfig, configureChains, createConfig } from "wagmi";
-import { bsc, bscTestnet,sepolia } from 'wagmi/chains'; // Corrected import
+import { bsc, bscTestnet, sepolia } from "wagmi/chains";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
 import { walletConnectProvider, EIP6963Connector } from "@web3modal/wagmi";
 import { publicProvider } from "wagmi/providers/public";
-import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'; // Import jsonRpcProvider
+import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 import { ENV } from "src/configs/env";
+
 const projectId = process.env.NEXT_PUBLIC_WEB3_PROJECT_ID;
-// const projectId = "88660d06e2cfb815df911764f617401a";
 if (!projectId) {
-  throw new Error("Error: NEXT_PUBLIC_WEB3_PROJECT_ID is not defined. Please set it in your .env file.");
+  throw new Error(
+    "Error: NEXT_PUBLIC_WEB3_PROJECT_ID is not defined. Please set it in your .env file."
+  );
 }
 
-// WalletConnect validates metadata.url against the site origin; keep it aligned with deployment.
-const appOrigin = (ENV.frontendBaseUrl || "").replace(/\/$/, "") || "https://blackrockcommunity.cloud";
+// WalletConnect metadata — must match the deployed origin exactly
+const appOrigin =
+  (ENV.frontendBaseUrl || "").replace(/\/$/, "") ||
+  "https://bwscan.io";
+
 const metadata = {
-  name: "BRC Platform",
+  name: "BIGWHALE Platform",
   description: "World's Largest Crypto Earning Platform",
   url: appOrigin,
   icons: [`${appOrigin}/images/pages/Logo-signup.png`],
@@ -25,70 +30,52 @@ const metadata = {
 
 const walletConnectWalletIds = (ENV?.wallets || []).filter(Boolean);
 
-// Define your chains based on ENV
+// ── Active chain ──────────────────────────────────────────────────────────────
 const activeChains = [];
-if (ENV.chainId === 56) {
-  activeChains.push(bsc);
-} else if (ENV.chainId === 97) {
-  activeChains.push(bscTestnet);
-} else if (ENV.chainId === 11155111) {
-  activeChains.push(sepolia);
-} else {
-  // Fallback or error if chainId is not supported
+if (ENV.chainId === 56) activeChains.push(bsc);
+else if (ENV.chainId === 97) activeChains.push(bscTestnet);
+else if (ENV.chainId === 11155111) activeChains.push(sepolia);
+else {
   console.warn(`Unsupported chainId: ${ENV.chainId}. Defaulting to BSC Mainnet.`);
-  activeChains.push(bsc); // Or throw an error
+  activeChains.push(bsc);
 }
 
-// --- RPC Configuration ---
-// Option A: Using WalletConnect's RPC (ensure you have a unique projectId with enough quota)
-// const rpcProviders = [walletConnectProvider({ projectId }), publicProvider()];
-
-// Option B: Using a dedicated third-party RPC (e.g., Alchemy) - Recommended for higher traffic
- // https://bnb-mainnet.g.alchemy.com/v2/nLkxIReAcZZLSpK7jLtmd/getNFTs/?owner=vitalik.eth
-const bscRpcUrl = "https://bnb-mainnet.g.alchemy.com/v2/nLkxIReAcZZLSpK7jLtmd"; // e.g., from Alchemy: https://bsc-mainnet.g.alchemy.com/v2/YOUR_KEY
-const bscTestnetRpcUrl = "https://bnb-mainnet.g.alchemy.com/v2/t2m-k706O1_CKUrV_fIYVVYYdew4oZrx"; // e.g., from Alchemy
-const sepoliaRpcUrl = "https://eth-sepolia.g.alchemy.com/v2/gbnhSoSy4pQ2eiWkI2KQoAxiFgAQWVf9"; // e.g., from Infura
-
-if (ENV.chainId === 56 && !bscRpcUrl) {
-  console.warn("Warning: NEXT_PUBLIC_BSC_RPC_URL is not defined for BSC Mainnet. Falling back to public provider, which might be rate-limited.");
-}
-if (ENV.chainId === 97 && !bscTestnetRpcUrl) {
-  console.warn("Warning: NEXT_PUBLIC_BSC_TESTNET_RPC_URL is not defined for BSC Testnet. Falling back to public provider, which might be rate-limited.");
-}
-if (ENV.chainId === 11155111 && !sepoliaRpcUrl) {
-  console.warn("Warning: NEXT_PUBLIC_SEPOLIA_RPC_URL is not defined for Sepolia. Falling back to public provider, which might be rate-limited.");
-}
-
-
+// ── RPC providers ─────────────────────────────────────────────────────────────
+const bscRpcUrl = "https://bnb-mainnet.g.alchemy.com/v2/nLkxIReAcZZLSpK7jLtmd";
+const bscTestnetRpcUrl = "https://bnb-mainnet.g.alchemy.com/v2/t2m-k706O1_CKUrV_fIYVVYYdew4oZrx";
+const sepoliaRpcUrl = "https://eth-sepolia.g.alchemy.com/v2/gbnhSoSy4pQ2eiWkI2KQoAxiFgAQWVf9";
 
 const rpcProviders = [
   jsonRpcProvider({
     rpc: (chain) => {
-      if (chain.id === bsc.id && bscRpcUrl) {
-        return { http: bscRpcUrl };
-      }
-      if (chain.id === bscTestnet.id && bscTestnetRpcUrl) {
-        return { http: bscTestnetRpcUrl };
-      }
-      if (chain.id === sepolia.id && sepoliaRpcUrl) {
-        return { http: sepoliaRpcUrl };
-      }
-      // Fallback to chain's default public RPC or WalletConnect RPC
-      // You can also add walletConnectProvider({ projectId }) here as a fallback if desired
-      return null; // Or chain.rpcUrls.default.http[0] if you want to use the default public RPC from chain definition
+      if (chain.id === bsc.id && bscRpcUrl) return { http: bscRpcUrl };
+      if (chain.id === bscTestnet.id && bscTestnetRpcUrl) return { http: bscTestnetRpcUrl };
+      if (chain.id === sepolia.id && sepoliaRpcUrl) return { http: sepoliaRpcUrl };
+      return null;
     },
   }),
-  walletConnectProvider({ projectId }), // Still useful for WalletConnect specific operations or as a fallback
-  publicProvider(), // General fallback
+  walletConnectProvider({ projectId }),
+  publicProvider(),
 ];
-// --- End RPC Configuration ---
-
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   activeChains,
   rpcProviders
 );
 
+// ── wagmi config ──────────────────────────────────────────────────────────────
+//
+// KEY FIX: shimDisconnect: false on InjectedConnector
+//
+// shimDisconnect: true writes a "wagmi.disconnected" flag to localStorage when
+// the user disconnects. On MetaMask mobile's in-app browser, this flag persists
+// across page reloads (triggered by transaction confirmations), causing wagmi to
+// skip autoConnect and show the wallet as disconnected.
+//
+// Setting shimDisconnect: false means wagmi always attempts autoConnect on mount,
+// which is the correct behaviour for MetaMask mobile where the provider is always
+// injected and the connection should survive page reloads.
+//
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: [
@@ -98,9 +85,9 @@ const wagmiConfig = createConfig({
         projectId,
         showQrModal: false,
         metadata,
-        // Persist WalletConnect session across page reloads (critical for MetaMask mobile)
+        // Persist WalletConnect session in localStorage so it survives page reloads
         storageOptions: {
-          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+          storage: typeof window !== "undefined" ? window.localStorage : undefined,
         },
       },
     }),
@@ -108,9 +95,11 @@ const wagmiConfig = createConfig({
     new InjectedConnector({
       chains,
       options: {
-        shimDisconnect: true,
-        // Do NOT shimDisconnect for MetaMask mobile — it clears the session on reload
-        // shimDisconnect only applies to desktop injected wallets
+        // shimDisconnect: false — do NOT write a disconnected flag to localStorage.
+        // MetaMask mobile reloads the page after every tx confirmation; with
+        // shimDisconnect: true the app incorrectly treats the reload as a manual
+        // disconnect and forces the user to reconnect manually.
+        shimDisconnect: false,
       },
     }),
   ],
@@ -120,10 +109,11 @@ const wagmiConfig = createConfig({
 
 createWeb3Modal({
   wagmiConfig,
-  projectId, // This projectId is for the Web3Modal UI and WalletConnect protocol
+  projectId,
   chains,
-  // Omit when env wallet IDs are missing — an empty/undefined list breaks the modal on mobile.
-  ...(walletConnectWalletIds.length > 0 ? { includeWalletIds: walletConnectWalletIds } : {}),
+  ...(walletConnectWalletIds.length > 0
+    ? { includeWalletIds: walletConnectWalletIds }
+    : {}),
 });
 
 export function Web3Modal({ children }) {

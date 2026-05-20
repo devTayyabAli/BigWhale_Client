@@ -63,29 +63,38 @@ const TELEGRAM_GROUP_URL  = "https://t.me/+3zdUVhUPJsc1ODY8";
 const WHATSAPP_CHANNEL_URL = process.env.NEXT_PUBLIC_WHATSAPP_CHANNEL_URL || "https://whatsapp.com/channel/bigwhaleofficial";
 
 // ── useTelegramWidget hook ───────────────────────────────────────────
-const useTelegramWidget = (containerId, onAuth) => {
+// `open` is required as a dependency: the Dialog renders the container div
+// only after it opens, so the effect must re-run when open becomes true.
+const useTelegramWidget = (containerId, onAuth, open) => {
   useEffect(() => {
+    if (!open) return;                          // modal not open — container not in DOM yet
     if (typeof window === "undefined") return;
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    container.innerHTML = "";
 
-    window.onTelegramAuth = (user) => { onAuth(user); };
+    // Small delay to let MUI Dialog finish its enter animation and mount the DOM
+    const timer = setTimeout(() => {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = "";
 
-    const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute("data-telegram-login", TELEGRAM_BOT_NAME);
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-onauth", "onTelegramAuth(user)");
-    script.setAttribute("data-request-access", "write");
-    script.async = true;
-    container.appendChild(script);
+      window.onTelegramAuth = (user) => { onAuth(user); };
+
+      const script = document.createElement("script");
+      script.src = "https://telegram.org/js/telegram-widget.js?22";
+      script.setAttribute("data-telegram-login", TELEGRAM_BOT_NAME);
+      script.setAttribute("data-size", "large");
+      script.setAttribute("data-onauth", "onTelegramAuth(user)");
+      script.setAttribute("data-request-access", "write");
+      script.async = true;
+      container.appendChild(script);
+    }, 300);
 
     return () => {
+      clearTimeout(timer);
       delete window.onTelegramAuth;
+      const container = document.getElementById(containerId);
       if (container) container.innerHTML = "";
     };
-  }, [containerId, onAuth]);
+  }, [containerId, onAuth, open]);  // re-run when modal opens/closes
 };
 
 // ── SocialStep component ─────────────────────────────────────────────
@@ -197,7 +206,7 @@ const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
     dispatch(verifyTelegram({ userId, telegramData }));
   }, [userId, dispatch]);
 
-  useTelegramWidget("telegram-widget-container", handleTelegramAuth);
+  useTelegramWidget("telegram-widget-container", handleTelegramAuth, open);
 
   // ── WhatsApp: user clicks "I've Joined" ───────────────────────────
   const handleWhatsAppVerify = useCallback(async () => {

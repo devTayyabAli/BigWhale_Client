@@ -58,6 +58,7 @@ const AuthProvider = ({ children }) => {
 
         const returnUrl = router.query.returnUrl;
         setUser({ ...response.data.userData });
+        setLoading(false);
         const redirectURL = returnUrl && returnUrl !== "/" ? returnUrl : "/";
         router.replace(redirectURL);
       })
@@ -69,6 +70,7 @@ const AuthProvider = ({ children }) => {
   const handleLogout = () => {
     dispatch(resetUser());
     dispatch(resetCurrentUser());
+    setUser(null);
     window.localStorage.removeItem(authConfig.storageUserDataKeyName);
     window.localStorage.removeItem(authConfig.storageTokenKeyName);
     router.push("/login");

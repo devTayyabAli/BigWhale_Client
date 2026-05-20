@@ -22,6 +22,7 @@ import { stakeKGC } from "src/store/apps/stake/stakeSlice";
 import { completeStakekGC } from "src/store/apps/stake/completeStakeSlice";
 import { completeStack } from "src/store/apps/transaction/completeTransactionEvents";
 import { createTxLog } from "src/store/apps/transaction/transactionLogsSlice";
+import { getCurrentUser } from "src/store/apps/auth/currentUserSlice";
 
 import { toast } from "react-hot-toast";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
@@ -245,6 +246,7 @@ const Stake = () => {
         refetchMaxUSDC()
         refetchKGCTokens();
         refetchUSDCTokens();
+        dispatch(getCurrentUser(userId)); // refresh totalStakeAmount in Token Overview
         setStakeAmount("");
         setKGCAmount("");
       };

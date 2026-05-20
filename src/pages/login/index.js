@@ -32,6 +32,7 @@ import { resetCurrentUser } from 'src/store/apps/auth/currentUserSlice'
 import NetworkSelector from 'src/views/components/choose-network-modal'
 import defaultAuthConfig from 'src/configs/auth'
 import Image from 'next/image'
+import { useAuth } from 'src/hooks/useAuth'
 
 // ── Animations ──────────────────────────────────────────────────────
 const floatAnim = keyframes`
@@ -293,6 +294,7 @@ const LoginPage = () => {
   const dispatch = useDispatch()
   const theme = useTheme()
   const router = useRouter()
+  const { setUser, setLoading } = useAuth()
   const [loader, setLoader] = useState(null)
   const [payload, setPayload] = useState(null)
   const [showWalletError, setShowWalletError] = useState(false)
@@ -337,6 +339,9 @@ const LoginPage = () => {
         const { storageTokenKeyName, storageUserDataKeyName } = defaultAuthConfig
         window.localStorage.setItem(storageTokenKeyName, data?.token)
         window.localStorage.setItem(storageUserDataKeyName, JSON.stringify(response?.payload))
+        // Sync AuthContext so AuthGuard sees the user immediately — no reload needed
+        setUser(response?.payload)
+        setLoading(false)
         router?.push('/dashboards/analytics').then(() => setLoader(false))
       } else {
         setLoader(false)

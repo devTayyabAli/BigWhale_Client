@@ -499,10 +499,10 @@ const Withdrawal = () => {
   };
 
   const handleSubmit = async () => {
-    if (!bothConfirmed) {
-      setSocialGateOpen(true);
-      return;
-    }
+    // if (!bothConfirmed) {
+    //   setSocialGateOpen(true);
+    //   return;
+    // }
     if (chain?.id !== ENV.chainId) return switchNetwork?.(ENV.chainId);
     withdrawAmount();
   };
@@ -561,12 +561,12 @@ const Withdrawal = () => {
 
   return (
     <>
-      <SocialGateModal
+      {/* <SocialGateModal
         open={socialGateOpen}
         onClose={() => setSocialGateOpen(false)}
         onBothVerified={handleBothVerified}
         userId={userId}
-      />
+      /> */}
 
       <Card sx={{ p: 8 }}>
         <Card sx={{ border: 1 }}>

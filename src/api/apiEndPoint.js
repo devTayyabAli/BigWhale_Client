@@ -27,5 +27,6 @@ export const CREATE_SUPPORT_TICKET_ENDPOINT = '/support';
 export const VERIFY_TELEGRAM_ENDPOINT   = '/auth/verify-telegram';
 export const VERIFY_WHATSAPP_ENDPOINT   = '/auth/verify-whatsapp';
 export const WHATSAPP_CODE_ENDPOINT     = '/auth/whatsapp-code';
+export const WHATSAPP_CHECK_ENDPOINT    = '/auth/whatsapp-check';
 export const SOCIAL_STATUS_ENDPOINT     = '/auth/social-status';
 

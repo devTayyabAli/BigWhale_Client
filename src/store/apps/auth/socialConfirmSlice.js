@@ -11,6 +11,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "src/api/api";
 import {
   WHATSAPP_CODE_ENDPOINT,
+  WHATSAPP_CHECK_ENDPOINT,
   SOCIAL_STATUS_ENDPOINT,
 } from "src/api/apiEndPoint";
 
@@ -46,7 +47,7 @@ export const fetchSocialStatus = createAsyncThunk(
 );
 
 // ── Thunk: generate a WhatsApp verification code ─────────────────────
-// Returns a wa.me deep-link. User sends the code → webhook verifies.
+// Returns a wa.me deep-link. User sends the code → backend polls Meta API.
 export const generateWhatsAppCode = createAsyncThunk(
   "socialConfirm/generateWhatsAppCode",
   async (userId, { rejectWithValue }) => {
@@ -56,6 +57,22 @@ export const generateWhatsAppCode = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(
         err?.response?.data?.message || "Failed to generate WhatsApp code"
+      );
+    }
+  }
+);
+
+// ── Thunk: poll backend to check if code was received ────────────────
+// Called every 3s after user sends the message. Backend reads Meta API.
+export const checkWhatsAppCode = createAsyncThunk(
+  "socialConfirm/checkWhatsAppCode",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${WHATSAPP_CHECK_ENDPOINT}/${userId}`);
+      return res.data?.data; // { whatsappJoined: true/false }
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Check failed"
       );
     }
   }
@@ -126,6 +143,18 @@ const socialConfirmSlice = createSlice({
       .addCase(generateWhatsAppCode.rejected, (state, action) => {
         state.codeStatus    = "failed";
         state.whatsappError = action.payload;
+      });
+
+    // ── checkWhatsAppCode (polling) ────────────────────────────────
+    builder
+      .addCase(checkWhatsAppCode.fulfilled, (state, action) => {
+        if (action.payload?.whatsappJoined) {
+          state.whatsappJoined     = true;
+          state.whatsappVerifiedAt = new Date().toISOString();
+          state.bothConfirmed      = true;
+          state.whatsappLink       = null;
+          state.whatsappCodeExpiry = null;
+        }
       });
   },
 });

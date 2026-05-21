@@ -33,6 +33,7 @@ import { completeWithdraw } from "src/store/apps/transaction/completeTransaction
 import {
   fetchSocialStatus,
   generateWhatsAppCode,
+  checkWhatsAppCode,
   markWhatsAppVerified,
   clearWhatsAppError,
 } from "src/store/apps/auth/socialConfirmSlice";
@@ -100,14 +101,17 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
   }, [secondsLeft, whatsappJoined, open, userId, dispatch]);
 
   // ── Poll every 3s while modal is open ────────────────────────────
+  // Calls backend which reads Meta API messages to find the code
   const pollRef = useRef(null);
   useEffect(() => {
-    if (!open || !userId) return;
+    if (!open || !userId || whatsappJoined) return;
+    // Start polling only after the user has a link (i.e. has sent the message)
+    if (!whatsappLink) return;
     pollRef.current = setInterval(() => {
-      dispatch(fetchSocialStatus(userId));
+      dispatch(checkWhatsAppCode(userId));
     }, POLL_INTERVAL_MS);
     return () => clearInterval(pollRef.current);
-  }, [open, userId, dispatch]);
+  }, [open, userId, whatsappJoined, whatsappLink, dispatch]);
 
   // ── Socket: instant update when webhook fires ─────────────────────
   useEffect(() => {

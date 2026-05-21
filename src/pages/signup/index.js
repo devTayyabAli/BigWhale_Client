@@ -190,7 +190,10 @@ const Register = () => {
   }
 
   // Contract writes
-  const { isError: isApprovalError, data: approveTokenTx, error: approveTokenTxError, isLoading: isApprovingTokens, isSuccess: isApprovalTxSent, write: approveTokens } = useContractWrite({ address: CONTRACT_INFO.token.address, abi: CONTRACT_INFO.token.abi, functionName: 'approve' })
+  // mode: "recklesslyUnprepared" — wagmi v1 skips simulateContract pre-flight.
+  // Without this, viem's simulateContract runs with no account set and returns
+  // "0x", causing the "returned no data" error even when the contract is valid.
+  const { isError: isApprovalError, data: approveTokenTx, error: approveTokenTxError, isLoading: isApprovingTokens, isSuccess: isApprovalTxSent, write: approveTokens } = useContractWrite({ address: CONTRACT_INFO.token.address, abi: CONTRACT_INFO.token.abi, functionName: 'approve', mode: 'recklesslyUnprepared' })
   const { isSuccess: isApprovalCompleted, isError: approveWaitError, error: approveTxWaitError } = useWaitForTransaction({ hash: approveTokenTx?.hash })
   const { isError: tokenError, error: transferTokenTxError, data: tokenTx, isLoading: isTransferInprogress, isSuccess: isTokenTxSent, write: transferTokens } = useContractWrite({ address: CONTRACT_INFO.main.address, abi: CONTRACT_INFO.main.abi, functionName: 'registerUser' })
   const { isSuccess: tokenTransferedCompleted, isError: tokenWaitError, error: tokenTxWaitError } = useWaitForTransaction({ hash: tokenTx?.hash })

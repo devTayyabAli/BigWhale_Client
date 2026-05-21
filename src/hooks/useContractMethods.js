@@ -42,6 +42,9 @@ const useContractMethods = (tokensToFetch) => {
     address: CONTRACT_INFO?.kgc?.address,
     abi: CONTRACT_INFO?.kgc?.abi,
     functionName: "approve",
+    // wagmi v1: skip simulateContract pre-flight — it returns "0x" when the
+    // account is not set at hook-init time. Args are validated by the wallet.
+    mode: "recklesslyUnprepared",
   });
 
   const {

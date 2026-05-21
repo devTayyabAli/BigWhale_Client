@@ -42,7 +42,9 @@ else {
 
 // ── RPC providers ─────────────────────────────────────────────────────────────
 const bscRpcUrl = "https://bnb-mainnet.g.alchemy.com/v2/nLkxIReAcZZLSpK7jLtmd";
-const bscTestnetRpcUrl = "https://bnb-mainnet.g.alchemy.com/v2/t2m-k706O1_CKUrV_fIYVVYYdew4oZrx";
+// ⚠️ Was incorrectly pointing to bnb-mainnet — contracts on testnet were not found,
+// causing simulateContract to return "0x" (no data) for every call.
+const bscTestnetRpcUrl = "https://bnb-testnet.g.alchemy.com/v2/t2m-k706O1_CKUrV_fIYVVYYdew4oZrx";
 const sepoliaRpcUrl = "https://eth-sepolia.g.alchemy.com/v2/gbnhSoSy4pQ2eiWkI2KQoAxiFgAQWVf9";
 
 const rpcProviders = [

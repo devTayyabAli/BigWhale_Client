@@ -16,6 +16,15 @@ const AuthGuard = props => {
       if (!router.isReady) {
         return
       }
+
+      // ── MetaMask mobile reload guard ──────────────────────────────────────
+      // MetaMask mobile reloads the page after every tx confirmation.
+      // auth.loading is true while AuthContext reads from localStorage.
+      // Do NOT redirect during this window — wait until loading is false.
+      if (auth.loading) {
+        return
+      }
+
       if (auth.user === null && !window.localStorage.getItem('userData')) {
         if (router.asPath !== '/') {
           router.replace({
@@ -25,14 +34,17 @@ const AuthGuard = props => {
         } else {
           router.replace('/login')
         }
-      }else if(router.asPath === '/'){
+      } else if (router.asPath === '/') {
         router.replace('/dashboards/analytics/')
-    }
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [router.route]
+    [router.route, auth.loading]
   )
-  if (auth.user === null) {
+
+  // Show fallback spinner while auth is loading OR user is null
+  // This prevents a flash of the protected page before redirect
+  if (auth.loading || auth.user === null) {
     return fallback
   }
 

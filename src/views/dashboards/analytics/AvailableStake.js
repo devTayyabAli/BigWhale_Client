@@ -84,7 +84,7 @@ const AvailableStake = () => {
     >
       <CardContent sx={{ p: 4 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 10 }}>
           <Box
             sx={{
               width: 40, height: 40, borderRadius: '10px',

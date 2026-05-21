@@ -130,7 +130,7 @@ const AnalyticsDashboard = () => {
   // ── Fetch guards: only fetch if data is not already loaded ────────
   // Prevents redundant API calls on every re-render / navigation
   const referralStatus = useSelector(state => state?.levelBonus?.referralStatsStatus)
-  const bannerStatus   = useSelector(state => state?.support?.bannerStatus)
+  const bannerStatus = useSelector(state => state?.support?.bannerStatus)
 
   const bannerURL = getNewsBannerValue?.[0]?.picture?.[0]?.url
 
@@ -153,13 +153,13 @@ const AnalyticsDashboard = () => {
       worth: '',
       status: capitalizeFirstLetter(currentUser?.status) || 'N/A',
     },
-    { title: 'Staking Bonus',    worth: referralStatsData?.stakingRewardBonus    || 0 },
-    { title: 'Level Bonus',      worth: referralStatsData?.referralLevelBonus    || 0 },
-    { title: 'Leadership Bonus', worth: referralStatsData?.leadershipBonus       || 0 },
-    { title: 'Instant Bonus',    worth: referralStatsData?.instantRewardBonus    || 0 },
-    { title: 'Total Bonus',      worth: referralStatsData?.totalBonus            || 0 },
-    { title: 'Total Withdrawal', worth: referralStatsData?.totalWithdrawal       || 0 },
-    { title: 'Available Balance',worth: referralStatsData?.availableBonusBalance || 0 },
+    { title: 'Staking Bonus', worth: referralStatsData?.stakingRewardBonus || 0 },
+    { title: 'Level Bonus', worth: referralStatsData?.referralLevelBonus || 0 },
+    { title: 'Leadership Bonus', worth: referralStatsData?.leadershipBonus || 0 },
+    { title: 'Instant Bonus', worth: referralStatsData?.instantRewardBonus || 0 },
+    { title: 'Total Bonus', worth: referralStatsData?.totalBonus || 0 },
+    { title: 'Total Withdrawal', worth: referralStatsData?.totalWithdrawal || 0 },
+    { title: 'Available Balance', worth: referralStatsData?.availableBonusBalance || 0 },
   ], [referralStatsData, currentUser])
 
   return (
@@ -170,8 +170,11 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12}>
           <UserProfileHeader />
         </Grid>
-
-         <Grid item xs={12} md={5}>
+        {/* Wallet & Token */}
+        <Grid item xs={12}>
+          <SectionHeader icon='tabler:wallet' title='Wallet & Tokens' subtitle='Manage your assets' />
+        </Grid>
+        <Grid item xs={12} md={5}>
           <AvailableBalance />
         </Grid>
         <Grid item xs={12} md={7}>
@@ -219,11 +222,8 @@ const AnalyticsDashboard = () => {
           <DownlineTeam />
         </Grid>
 
-        {/* Wallet & Token */}
-        <Grid item xs={12}>
-          <SectionHeader icon='tabler:wallet' title='Wallet & Tokens' subtitle='Manage your assets' />
-        </Grid>
-       
+
+
 
         {/* Referral Links */}
         <Grid item xs={12}>

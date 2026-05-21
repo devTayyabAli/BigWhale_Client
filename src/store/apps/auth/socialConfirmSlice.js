@@ -1,33 +1,35 @@
 // ** BIGWHALE — Social Verification Slice
 //
-// Telegram: Login Widget → backend verifies hash + getChatMember
-// WhatsApp: User joins channel → clicks "I've Joined" → backend marks verified
+// Real verification flow (no "I've Joined" button):
+//  1. generateWhatsAppCode(userId)  → backend creates a unique code, returns wa.me link
+//  2. User opens the link → WhatsApp opens with "VERIFY-XXXXXX" pre-filled
+//  3. User sends the message to the business number
+//  4. Backend webhook receives it, matches the code, marks whatsappJoined = true
+//  5. Frontend polls fetchSocialStatus every 3s until verified (or socket event fires)
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "src/api/api";
 import {
-  VERIFY_TELEGRAM_ENDPOINT,
-  VERIFY_WHATSAPP_ENDPOINT,
+  WHATSAPP_CODE_ENDPOINT,
   SOCIAL_STATUS_ENDPOINT,
 } from "src/api/apiEndPoint";
 
 const initialState = {
   // Persisted in DB
-  telegramJoined:     false,
-  telegramUsername:   null,
-  telegramVerifiedAt: null,
   whatsappJoined:     false,
   whatsappVerifiedAt: null,
-  bothConfirmed:      false,
+  bothConfirmed:      false,   // alias: whatsappJoined
 
-  // Loading / error per action
-  fetchStatus:     "idle",   // idle | loading | succeeded | failed
-  telegramStatus:  "idle",   // idle | loading | succeeded | failed
-  whatsappStatus:  "idle",   // idle | loading | succeeded | failed
+  // Deep-link returned by generateWhatsAppCode
+  whatsappLink:       null,
+  whatsappCodeExpiry: null,
 
-  telegramError:   null,
-  whatsappError:   null,
-  fetchError:      null,
+  // Loading / error
+  fetchStatus:    "idle",   // idle | loading | succeeded | failed
+  codeStatus:     "idle",   // idle | loading | succeeded | failed (generating code)
+
+  whatsappError: null,
+  fetchError:    null,
 };
 
 // ── Thunk: fetch current social status from DB ───────────────────────
@@ -43,32 +45,17 @@ export const fetchSocialStatus = createAsyncThunk(
   }
 );
 
-// ── Thunk: verify Telegram via Login Widget data ─────────────────────
-export const verifyTelegram = createAsyncThunk(
-  "socialConfirm/verifyTelegram",
-  async ({ userId, telegramData }, { rejectWithValue }) => {
-    try {
-      const res = await api.post(VERIFY_TELEGRAM_ENDPOINT, { userId, telegramData });
-      return res.data?.data;
-    } catch (err) {
-      return rejectWithValue(
-        err?.response?.data?.message || "Telegram verification failed"
-      );
-    }
-  }
-);
-
-// ── Thunk: verify WhatsApp channel join ──────────────────────────────
-// User clicks "I've Joined" → backend marks whatsappJoined = true
-export const verifyWhatsApp = createAsyncThunk(
-  "socialConfirm/verifyWhatsApp",
+// ── Thunk: generate a WhatsApp verification code ─────────────────────
+// Returns a wa.me deep-link. User sends the code → webhook verifies.
+export const generateWhatsAppCode = createAsyncThunk(
+  "socialConfirm/generateWhatsAppCode",
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await api.post(VERIFY_WHATSAPP_ENDPOINT, { userId });
-      return res.data?.data;
+      const res = await api.post(WHATSAPP_CODE_ENDPOINT, { userId });
+      return res.data?.data; // { link, expiresAt }
     } catch (err) {
       return rejectWithValue(
-        err?.response?.data?.message || "WhatsApp verification failed"
+        err?.response?.data?.message || "Failed to generate WhatsApp code"
       );
     }
   }
@@ -79,9 +66,26 @@ const socialConfirmSlice = createSlice({
   name: "socialConfirm",
   initialState,
   reducers: {
-    clearTelegramError: (state) => { state.telegramError = null; },
     clearWhatsAppError: (state) => { state.whatsappError = null; },
     resetSocialConfirm: () => initialState,
+    // Called by socket event "whatsappVerified"
+    markWhatsAppVerified: (state) => {
+      state.whatsappJoined     = true;
+      state.whatsappVerifiedAt = new Date().toISOString();
+      state.bothConfirmed      = true;
+      state.whatsappLink       = null;
+      state.whatsappCodeExpiry = null;
+    },
+    // Called when re-verification window expires (server reset)
+    resetWhatsAppVerification: (state) => {
+      state.whatsappJoined     = false;
+      state.whatsappVerifiedAt = null;
+      state.bothConfirmed      = false;
+      state.whatsappLink       = null;
+      state.whatsappCodeExpiry = null;
+      state.codeStatus         = "idle";
+      state.whatsappError      = null;
+    },
   },
   extraReducers: (builder) => {
 
@@ -93,61 +97,44 @@ const socialConfirmSlice = createSlice({
       })
       .addCase(fetchSocialStatus.fulfilled, (state, action) => {
         state.fetchStatus        = "succeeded";
-        state.telegramJoined     = action.payload?.telegramJoined     || false;
-        state.telegramUsername   = action.payload?.telegramUsername   || null;
-        state.telegramVerifiedAt = action.payload?.telegramVerifiedAt || null;
         state.whatsappJoined     = action.payload?.whatsappJoined     || false;
         state.whatsappVerifiedAt = action.payload?.whatsappVerifiedAt || null;
         state.bothConfirmed      = action.payload?.bothConfirmed      || false;
+        // If server reset the join status, clear the link too
+        if (!action.payload?.whatsappJoined) {
+          state.whatsappLink       = null;
+          state.whatsappCodeExpiry = null;
+          state.codeStatus         = "idle";
+        }
       })
       .addCase(fetchSocialStatus.rejected, (state, action) => {
         state.fetchStatus = "failed";
         state.fetchError  = action.payload;
       });
 
-    // ── verifyTelegram ─────────────────────────────────────────────
+    // ── generateWhatsAppCode ───────────────────────────────────────
     builder
-      .addCase(verifyTelegram.pending, (state) => {
-        state.telegramStatus = "loading";
-        state.telegramError  = null;
+      .addCase(generateWhatsAppCode.pending, (state) => {
+        state.codeStatus    = "loading";
+        state.whatsappError = null;
       })
-      .addCase(verifyTelegram.fulfilled, (state, action) => {
-        state.telegramStatus     = "succeeded";
-        state.telegramJoined     = true;
-        state.telegramUsername   = action.payload?.telegramUsername || null;
-        state.telegramVerifiedAt = new Date().toISOString();
-        state.bothConfirmed      = true && state.whatsappJoined;
+      .addCase(generateWhatsAppCode.fulfilled, (state, action) => {
+        state.codeStatus         = "succeeded";
+        state.whatsappLink       = action.payload?.link      || null;
+        state.whatsappCodeExpiry = action.payload?.expiresAt || null;
       })
-      .addCase(verifyTelegram.rejected, (state, action) => {
-        state.telegramStatus = "failed";
-        state.telegramError  = action.payload;
-        state.telegramJoined = false;
-      });
-
-    // ── verifyWhatsApp ─────────────────────────────────────────────
-    builder
-      .addCase(verifyWhatsApp.pending, (state) => {
-        state.whatsappStatus = "loading";
-        state.whatsappError  = null;
-      })
-      .addCase(verifyWhatsApp.fulfilled, (state) => {
-        state.whatsappStatus     = "succeeded";
-        state.whatsappJoined     = true;
-        state.whatsappVerifiedAt = new Date().toISOString();
-        state.bothConfirmed      = state.telegramJoined && true;
-      })
-      .addCase(verifyWhatsApp.rejected, (state, action) => {
-        state.whatsappStatus = "failed";
-        state.whatsappError  = action.payload;
-        state.whatsappJoined = false;
+      .addCase(generateWhatsAppCode.rejected, (state, action) => {
+        state.codeStatus    = "failed";
+        state.whatsappError = action.payload;
       });
   },
 });
 
 export const {
-  clearTelegramError,
   clearWhatsAppError,
   resetSocialConfirm,
+  markWhatsAppVerified,
+  resetWhatsAppVerification,
 } = socialConfirmSlice.actions;
 
 export default socialConfirmSlice.reducer;

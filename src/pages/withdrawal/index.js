@@ -11,10 +11,11 @@ import CardActions from "@mui/material/CardActions";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import CircularProgress from "@mui/material/CircularProgress";
+import LinearProgress from "@mui/material/LinearProgress";
 
 // ** React Imports
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState, useContext, useCallback } from "react";
+import { useEffect, useState, useContext, useCallback, useRef } from "react";
 
 // ** Custom Component Import
 import CustomTextField from "src/@core/components/mui/text-field";
@@ -31,9 +32,8 @@ import { completeWithdraw } from "src/store/apps/transaction/completeTransaction
 // ** Redux — Social Verification
 import {
   fetchSocialStatus,
-  verifyTelegram,
-  verifyWhatsApp,
-  clearTelegramError,
+  generateWhatsAppCode,
+  markWhatsAppVerified,
   clearWhatsAppError,
 } from "src/store/apps/auth/socialConfirmSlice";
 
@@ -57,331 +57,332 @@ import Icon from "src/@core/components/icon";
 // ** Next
 import { useRouter } from "next/router";
 
-// ── Constants ────────────────────────────────────────────────────────
-const TELEGRAM_BOT_NAME   = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || "BigWhaleVerifyBot";
-const TELEGRAM_GROUP_URL  = "https://t.me/+3zdUVhUPJsc1ODY8";
-const WHATSAPP_CHANNEL_URL = process.env.NEXT_PUBLIC_WHATSAPP_CHANNEL_URL || "https://whatsapp.com/channel/bigwhaleofficial";
+// ── How often to poll for verification while modal is open ───────────
+const POLL_INTERVAL_MS = 3000; // 3 seconds — fast enough to feel real-time
 
-// ── useTelegramWidget hook ───────────────────────────────────────────
-// `open` is required as a dependency: the Dialog renders the container div
-// only after it opens, so the effect must re-run when open becomes true.
-const useTelegramWidget = (containerId, onAuth, open) => {
-  useEffect(() => {
-    if (!open) return;                          // modal not open — container not in DOM yet
-    if (typeof window === "undefined") return;
-
-    // Small delay to let MUI Dialog finish its enter animation and mount the DOM
-    const timer = setTimeout(() => {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      container.innerHTML = "";
-
-      window.onTelegramAuth = (user) => { onAuth(user); };
-
-      const script = document.createElement("script");
-      script.src = "https://telegram.org/js/telegram-widget.js?22";
-      script.setAttribute("data-telegram-login", TELEGRAM_BOT_NAME);
-      script.setAttribute("data-size", "large");
-      script.setAttribute("data-onauth", "onTelegramAuth(user)");
-      script.setAttribute("data-request-access", "write");
-      script.async = true;
-      container.appendChild(script);
-    }, 300);
-
-    return () => {
-      clearTimeout(timer);
-      delete window.onTelegramAuth;
-      const container = document.getElementById(containerId);
-      if (container) container.innerHTML = "";
-    };
-  }, [containerId, onAuth, open]);  // re-run when modal opens/closes
-};
-
-// ── SocialStep component ─────────────────────────────────────────────
-const SocialStep = ({
-  stepNum, icon, iconBg, iconGlow,
-  title, subtitle,
-  isVerified, isLoading, errorMsg, verifiedAt,
-  children,
-}) => (
-  <Box
-    sx={{
-      p: 3, mb: 2.5, borderRadius: "16px",
-      background: isVerified ? "rgba(16,185,129,0.08)" : "rgba(200,215,245,0.03)",
-      border: isVerified ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(200,215,245,0.1)",
-      transition: "all 0.3s ease",
-      position: "relative",
-    }}
-  >
-    {/* Step badge */}
-    <Box sx={{
-      position: "absolute", top: 12, right: 12,
-      width: 24, height: 24, borderRadius: "50%",
-      background: isVerified ? "rgba(16,185,129,0.2)" : "rgba(200,215,245,0.06)",
-      border: isVerified ? "1px solid rgba(16,185,129,0.4)" : "1px solid rgba(200,215,245,0.12)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: "0.7rem", fontWeight: 700,
-      color: isVerified ? "#10B981" : "rgba(200,215,245,0.35)",
-      fontFamily: '"Orbitron", sans-serif',
-    }}>
-      {isVerified ? <Icon icon="tabler:check" style={{ fontSize: "0.8rem" }} /> : stepNum}
-    </Box>
-
-    {/* Header */}
-    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: isVerified ? 1.5 : 2.5 }}>
-      <Box sx={{
-        width: 44, height: 44, borderRadius: "12px", flexShrink: 0,
-        background: iconBg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: `0 0 12px ${iconGlow}`,
-      }}>
-        <Icon icon={icon} style={{ color: "#fff", fontSize: "1.4rem" }} />
-      </Box>
-      <Box>
-        <Typography sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: "0.9rem", color: "#F8FAFC" }}>
-          {title}
-        </Typography>
-        <Typography sx={{ color: "rgba(200,215,245,0.45)", fontSize: "0.75rem" }}>
-          {subtitle}
-        </Typography>
-      </Box>
-    </Box>
-
-    {isVerified ? (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, borderRadius: "10px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-        <Icon icon="tabler:circle-check-filled" style={{ color: "#10B981", fontSize: "1.2rem" }} />
-        <Box>
-          <Typography sx={{ color: "#10B981", fontWeight: 700, fontSize: "0.85rem", fontFamily: '"Space Grotesk", sans-serif' }}>
-            Verified ✓
-          </Typography>
-          {verifiedAt && (
-            <Typography sx={{ color: "rgba(16,185,129,0.6)", fontSize: "0.72rem" }}>
-              {new Date(verifiedAt).toLocaleDateString()}
-            </Typography>
-          )}
-        </Box>
-      </Box>
-    ) : (
-      <>
-        {children}
-        {isLoading && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 2 }}>
-            <CircularProgress size={16} sx={{ color: "#00E5FF" }} />
-            <Typography sx={{ color: "rgba(0,229,255,0.7)", fontSize: "0.8rem", fontFamily: '"Space Grotesk", sans-serif' }}>
-              Verifying...
-            </Typography>
-          </Box>
-        )}
-        {errorMsg && (
-          <Box sx={{ mt: 2, p: 1.5, borderRadius: "8px", background: "rgba(255,46,159,0.08)", border: "1px solid rgba(255,46,159,0.2)" }}>
-            <Typography sx={{ color: "#FF2E9F", fontSize: "0.78rem", fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.5 }}>
-              {errorMsg}
-            </Typography>
-          </Box>
-        )}
-      </>
-    )}
-  </Box>
-);
-
-// ── Social Gate Modal ────────────────────────────────────────────────
-const SocialGateModal = ({ open, onClose, onBothVerified, userId }) => {
+// ── WhatsApp Verification Modal ──────────────────────────────────────
+const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
   const dispatch = useDispatch();
+  const socket   = useContext(SocketContext);
 
-  const telegramJoined     = useSelector(s => s.socialConfirm.telegramJoined);
-  const telegramVerifiedAt = useSelector(s => s.socialConfirm.telegramVerifiedAt);
   const whatsappJoined     = useSelector(s => s.socialConfirm.whatsappJoined);
   const whatsappVerifiedAt = useSelector(s => s.socialConfirm.whatsappVerifiedAt);
-  const telegramStatus     = useSelector(s => s.socialConfirm.telegramStatus);
-  const whatsappStatus     = useSelector(s => s.socialConfirm.whatsappStatus);
-  const telegramError      = useSelector(s => s.socialConfirm.telegramError);
+  const whatsappLink       = useSelector(s => s.socialConfirm.whatsappLink);
+  const whatsappCodeExpiry = useSelector(s => s.socialConfirm.whatsappCodeExpiry);
+  const codeStatus         = useSelector(s => s.socialConfirm.codeStatus);
   const whatsappError      = useSelector(s => s.socialConfirm.whatsappError);
 
-  const bothVerified = telegramJoined && whatsappJoined;
-
-  // ── Telegram Widget callback ──────────────────────────────────────
-  const handleTelegramAuth = useCallback(async (telegramData) => {
-    if (!userId || !telegramData) return;
-    dispatch(clearTelegramError());
-    dispatch(verifyTelegram({ userId, telegramData }));
-  }, [userId, dispatch]);
-
-  useTelegramWidget("telegram-widget-container", handleTelegramAuth, open);
-
-  // ── WhatsApp: user clicks "I've Joined" ───────────────────────────
-  const handleWhatsAppVerify = useCallback(async () => {
-    if (!userId) return;
-    dispatch(clearWhatsAppError());
-    dispatch(verifyWhatsApp(userId));
-  }, [userId, dispatch]);
-
-  // ── Auto-proceed when both verified ──────────────────────────────
+  // ── Code expiry countdown ─────────────────────────────────────────
+  const [secondsLeft, setSecondsLeft] = useState(null);
   useEffect(() => {
-    if (bothVerified && open) {
-      const t = setTimeout(() => { onBothVerified(); }, 800);
+    if (!whatsappCodeExpiry) { setSecondsLeft(null); return; }
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((new Date(whatsappCodeExpiry) - Date.now()) / 1000));
+      setSecondsLeft(diff);
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [whatsappCodeExpiry]);
+
+  // ── Generate code when modal opens ───────────────────────────────
+  useEffect(() => {
+    if (open && userId && codeStatus === "idle" && !whatsappJoined) {
+      dispatch(generateWhatsAppCode(userId));
+    }
+  }, [open, userId, codeStatus, whatsappJoined, dispatch]);
+
+  // ── Regenerate when code expires ─────────────────────────────────
+  useEffect(() => {
+    if (secondsLeft === 0 && !whatsappJoined && open) {
+      dispatch(generateWhatsAppCode(userId));
+    }
+  }, [secondsLeft, whatsappJoined, open, userId, dispatch]);
+
+  // ── Poll every 3s while modal is open ────────────────────────────
+  const pollRef = useRef(null);
+  useEffect(() => {
+    if (!open || !userId) return;
+    pollRef.current = setInterval(() => {
+      dispatch(fetchSocialStatus(userId));
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(pollRef.current);
+  }, [open, userId, dispatch]);
+
+  // ── Socket: instant update when webhook fires ─────────────────────
+  useEffect(() => {
+    if (!socket || !userId) return;
+    const handleVerified = () => {
+      dispatch(markWhatsAppVerified());
+    };
+    socket.on("whatsappVerified", handleVerified);
+    return () => socket.off("whatsappVerified", handleVerified);
+  }, [socket, userId, dispatch]);
+
+  // ── Auto-proceed when verified ────────────────────────────────────
+  useEffect(() => {
+    if (whatsappJoined && open) {
+      const t = setTimeout(() => { onVerified(); }, 1200);
       return () => clearTimeout(t);
     }
-  }, [bothVerified, open, onBothVerified]);
+  }, [whatsappJoined, open, onVerified]);
+
+  const handleOpenWhatsApp = useCallback(() => {
+    if (whatsappLink) window.open(whatsappLink, "_blank");
+  }, [whatsappLink]);
+
+  const handleRefreshCode = useCallback(() => {
+    if (!userId) return;
+    dispatch(clearWhatsAppError());
+    dispatch(generateWhatsAppCode(userId));
+  }, [userId, dispatch]);
+
+  // Progress bar value for expiry (0–100)
+  const progressValue = whatsappCodeExpiry && secondsLeft !== null
+    ? (secondsLeft / 600) * 100   // 600s = 10 min total
+    : 100;
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="xs"
       fullWidth
       PaperProps={{
         sx: {
           background: "rgba(13,18,36,0.97)",
           backdropFilter: "blur(24px)",
-          border: "1px solid rgba(0,229,255,0.2)",
+          border: "1px solid rgba(37,211,102,0.25)",
           borderRadius: "20px",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 40px rgba(0,229,255,0.08)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 40px rgba(37,211,102,0.08)",
           overflow: "hidden",
           "&::before": {
             content: '""',
             position: "absolute",
             top: 0, left: 0, right: 0,
             height: "2px",
-            background: "linear-gradient(90deg, #00E5FF, #A855F7, #25D366)",
+            background: "linear-gradient(90deg, #128C7E, #25D366, #128C7E)",
           },
         },
       }}
     >
       <DialogContent sx={{ p: 4 }}>
-        {/* Header */}
-        <Box sx={{ textAlign: "center", mb: 4 }}>
+
+        {/* ── Header ── */}
+        <Box sx={{ textAlign: "center", mb: 3 }}>
           <Box sx={{
-            width: 64, height: 64, borderRadius: "50%",
-            background: "linear-gradient(135deg, #00E5FF 0%, #A855F7 60%, #25D366 100%)",
+            width: 68, height: 68, borderRadius: "50%",
+            background: "linear-gradient(135deg, #128C7E 0%, #25D366 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 16px",
-            boxShadow: "0 0 20px rgba(0,229,255,0.4)",
+            margin: "0 auto 14px",
+            boxShadow: "0 0 24px rgba(37,211,102,0.45)",
           }}>
-            <Icon icon="tabler:shield-check" style={{ color: "#050816", fontSize: "1.8rem" }} />
+            <Icon icon="tabler:brand-whatsapp" style={{ color: "#fff", fontSize: "2rem" }} />
           </Box>
+
           <Typography sx={{
             fontFamily: '"Orbitron", sans-serif',
-            fontWeight: 800, fontSize: "1.15rem", letterSpacing: "0.08em",
-            background: "linear-gradient(135deg, #00E5FF, #A855F7)",
+            fontWeight: 800, fontSize: "1.05rem", letterSpacing: "0.06em",
+            background: "linear-gradient(135deg, #25D366, #128C7E)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-            mb: 1,
+            mb: 0.75,
           }}>
-            Community Verification
+            WhatsApp Verification
           </Typography>
-          <Typography sx={{ color: "rgba(200,215,245,0.55)", fontSize: "0.875rem", fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.6 }}>
-            Join our community to unlock withdrawal.
-            Verification is instant — just click and confirm.
+
+          <Typography sx={{
+            color: "rgba(200,215,245,0.5)", fontSize: "0.82rem",
+            fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.6,
+          }}>
+            Send a quick message to verify your WhatsApp.
+            No button to click — it confirms automatically.
           </Typography>
-          <Box sx={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent)", mt: 3 }} />
+
+          <Box sx={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(37,211,102,0.3), transparent)", mt: 2.5 }} />
         </Box>
 
-        {/* ── Step 1: Telegram ── */}
-        <SocialStep
-          stepNum="1"
-          icon="tabler:brand-telegram"
-          iconBg="linear-gradient(135deg, #0088cc, #00aaff)"
-          iconGlow="rgba(0,136,204,0.4)"
-          title="Join BIGWHALE Telegram Group"
-          subtitle="Click the button below — approve in Telegram app"
-          isVerified={telegramJoined}
-          isLoading={telegramStatus === "loading"}
-          errorMsg={telegramError}
-          verifiedAt={telegramVerifiedAt}
-        >
-          <Button
-            onClick={() => window.open(TELEGRAM_GROUP_URL, "_blank")}
-            startIcon={<Icon icon="tabler:external-link" style={{ fontSize: "0.85rem" }} />}
-            sx={{
-              background: "linear-gradient(135deg, #0088cc, #00aaff)",
-              color: "#fff",
-              fontFamily: '"Space Grotesk", sans-serif',
-              fontWeight: 600, fontSize: "0.82rem",
-              borderRadius: "10px", px: 2.5, py: 1, mb: 2,
-              transition: "all 0.2s ease",
-              "&:hover": { boxShadow: "0 0 14px rgba(0,136,204,0.5)", transform: "translateY(-1px)" },
-            }}
-          >
-            1. Join Telegram Group
-          </Button>
-
-          <Box>
-            <Typography sx={{ color: "rgba(200,215,245,0.5)", fontSize: "0.75rem", mb: 1, fontFamily: '"Space Grotesk", sans-serif' }}>
-              2. Then verify your membership:
-            </Typography>
-            <Box id="telegram-widget-container" sx={{ minHeight: 40 }} />
+        {/* ── Verified state ── */}
+        {whatsappJoined ? (
+          <Box sx={{
+            p: 3, borderRadius: "14px",
+            background: "rgba(16,185,129,0.1)",
+            border: "1px solid rgba(16,185,129,0.3)",
+          }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+              <Icon icon="tabler:circle-check-filled" style={{ color: "#10B981", fontSize: "1.5rem", flexShrink: 0 }} />
+              <Typography sx={{ color: "#10B981", fontWeight: 700, fontSize: "0.95rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+                WhatsApp Verified ✓
+              </Typography>
+            </Box>
+            {whatsappVerifiedAt && (
+              <Typography sx={{ color: "rgba(16,185,129,0.6)", fontSize: "0.72rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+                Verified on {new Date(whatsappVerifiedAt).toLocaleString()}
+              </Typography>
+            )}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 2 }}>
+              <CircularProgress size={16} sx={{ color: "#10B981" }} />
+              <Typography sx={{ color: "#10B981", fontWeight: 600, fontSize: "0.82rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+                Proceeding to withdrawal...
+              </Typography>
+            </Box>
           </Box>
-        </SocialStep>
 
-        {/* ── Step 2: WhatsApp Channel ── */}
-        <SocialStep
-          stepNum="2"
-          icon="tabler:brand-whatsapp"
-          iconBg="linear-gradient(135deg, #128C7E, #25D366)"
-          iconGlow="rgba(37,211,102,0.4)"
-          title="Join BIGWHALE WhatsApp Channel"
-          subtitle="Join the channel, then click Confirm below"
-          isVerified={whatsappJoined}
-          isLoading={whatsappStatus === "loading"}
-          errorMsg={whatsappError}
-          verifiedAt={whatsappVerifiedAt}
-        >
-          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
-            {/* Step 2a: Open WhatsApp channel */}
+        ) : codeStatus === "loading" ? (
+          /* ── Generating code ── */
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 3 }}>
+            <CircularProgress size={32} sx={{ color: "#25D366" }} />
+            <Typography sx={{ color: "rgba(200,215,245,0.5)", fontSize: "0.82rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+              Generating your verification code...
+            </Typography>
+          </Box>
+
+        ) : whatsappLink ? (
+          /* ── Code ready — show instructions ── */
+          <Box>
+            {/* Steps */}
+            <Box sx={{ mb: 2.5 }}>
+              {[
+                { num: "1", text: "Tap the button below — WhatsApp will open with your code pre-filled." },
+                { num: "2", text: "Just hit Send. That's it — verification is automatic." },
+              ].map(step => (
+                <Box key={step.num} sx={{ display: "flex", gap: 1.5, mb: 1.5 }}>
+                  <Box sx={{
+                    width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                    background: "rgba(37,211,102,0.15)",
+                    border: "1px solid rgba(37,211,102,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "0.7rem", fontWeight: 700, color: "#25D366",
+                    fontFamily: '"Orbitron", sans-serif',
+                  }}>
+                    {step.num}
+                  </Box>
+                  <Typography sx={{ color: "rgba(200,215,245,0.65)", fontSize: "0.82rem", fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.6 }}>
+                    {step.text}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+
+            {/* Open WhatsApp button */}
             <Button
-              onClick={() => window.open(WHATSAPP_CHANNEL_URL, "_blank")}
-              startIcon={<Icon icon="tabler:external-link" style={{ fontSize: "0.85rem" }} />}
+              fullWidth
+              onClick={handleOpenWhatsApp}
+              startIcon={<Icon icon="tabler:brand-whatsapp" style={{ fontSize: "1.1rem" }} />}
               sx={{
                 background: "linear-gradient(135deg, #128C7E, #25D366)",
                 color: "#fff",
                 fontFamily: '"Space Grotesk", sans-serif',
-                fontWeight: 600, fontSize: "0.82rem",
-                borderRadius: "10px", px: 2.5, py: 1,
+                fontWeight: 700, fontSize: "0.9rem",
+                borderRadius: "12px", py: 1.3, mb: 2,
                 transition: "all 0.2s ease",
-                "&:hover": { boxShadow: "0 0 14px rgba(37,211,102,0.5)", transform: "translateY(-1px)" },
+                "&:hover": { boxShadow: "0 0 20px rgba(37,211,102,0.5)", transform: "translateY(-1px)" },
               }}
             >
-              1. Join WhatsApp Channel
+              Send Verification Code
             </Button>
 
-            {/* Step 2b: Confirm join */}
-            <Button
-              onClick={handleWhatsAppVerify}
-              disabled={whatsappStatus === "loading"}
-              startIcon={
-                whatsappStatus === "loading"
-                  ? <CircularProgress size={14} sx={{ color: "#fff" }} />
-                  : <Icon icon="tabler:check" style={{ fontSize: "0.85rem" }} />
-              }
-              sx={{
-                background: "linear-gradient(135deg, #00E5FF 0%, #00C2FF 100%)",
-                color: "#050816",
-                fontFamily: '"Space Grotesk", sans-serif',
-                fontWeight: 700, fontSize: "0.82rem",
-                borderRadius: "10px", px: 2.5, py: 1,
-                transition: "all 0.2s ease",
-                "&:not(.Mui-disabled):hover": { boxShadow: "0 0 16px rgba(0,229,255,0.45)", transform: "translateY(-1px)" },
-                "&.Mui-disabled": { background: "rgba(0,229,255,0.15)", color: "rgba(0,229,255,0.4)" },
-              }}
-            >
-              {whatsappStatus === "loading" ? "Verifying..." : "2. I've Joined"}
-            </Button>
+            {/* Waiting indicator */}
+            <Box sx={{
+              p: 2, borderRadius: "10px",
+              background: "rgba(37,211,102,0.04)",
+              border: "1px solid rgba(37,211,102,0.12)",
+              display: "flex", alignItems: "center", gap: 1.5,
+              mb: 2,
+            }}>
+              <CircularProgress size={14} sx={{ color: "#25D366", flexShrink: 0 }} />
+              <Typography sx={{ color: "rgba(200,215,245,0.5)", fontSize: "0.78rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+                Waiting for your message... verifies automatically
+              </Typography>
+            </Box>
+
+            {/* Expiry countdown */}
+            {secondsLeft !== null && (
+              <Box sx={{ mb: 1.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography sx={{ color: "rgba(200,215,245,0.35)", fontSize: "0.7rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+                    Code expires in
+                  </Typography>
+                  <Typography sx={{
+                    fontSize: "0.7rem", fontFamily: '"Orbitron", sans-serif', fontWeight: 700,
+                    color: secondsLeft < 60 ? "#FF2E9F" : "rgba(37,211,102,0.7)",
+                  }}>
+                    {secondsLeft < 60
+                      ? `${secondsLeft}s`
+                      : `${Math.floor(secondsLeft / 60)}m ${secondsLeft % 60}s`}
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={progressValue}
+                  sx={{
+                    height: 3, borderRadius: 2,
+                    backgroundColor: "rgba(200,215,245,0.08)",
+                    "& .MuiLinearProgress-bar": {
+                      background: secondsLeft < 60
+                        ? "linear-gradient(90deg, #FF2E9F, #FF6B6B)"
+                        : "linear-gradient(90deg, #128C7E, #25D366)",
+                      borderRadius: 2,
+                    },
+                  }}
+                />
+              </Box>
+            )}
+
+            {/* Refresh code */}
+            <Box sx={{ textAlign: "center" }}>
+              <Typography
+                onClick={handleRefreshCode}
+                sx={{
+                  color: "rgba(37,211,102,0.5)", fontSize: "0.75rem",
+                  fontFamily: '"Space Grotesk", sans-serif',
+                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.5,
+                  "&:hover": { color: "#25D366" },
+                  transition: "color 0.2s",
+                }}
+              >
+                <Icon icon="tabler:refresh" style={{ fontSize: "0.8rem" }} />
+                Get a new code
+              </Typography>
+            </Box>
           </Box>
-        </SocialStep>
 
-        {/* Both verified — auto-proceed */}
-        {bothVerified && (
-          <Box sx={{
-            p: 2.5, borderRadius: "12px",
-            background: "rgba(16,185,129,0.1)",
-            border: "1px solid rgba(16,185,129,0.3)",
-            display: "flex", alignItems: "center", gap: 2,
-          }}>
-            <CircularProgress size={18} sx={{ color: "#10B981" }} />
-            <Typography sx={{ color: "#10B981", fontWeight: 600, fontSize: "0.875rem", fontFamily: '"Space Grotesk", sans-serif' }}>
-              Both verified! Proceeding to withdrawal...
-            </Typography>
+        ) : (
+          /* ── Error / no link yet ── */
+          <Box sx={{ textAlign: "center", py: 2 }}>
+            {whatsappError && (
+              <Box sx={{ mb: 2, p: 1.5, borderRadius: "8px", background: "rgba(255,46,159,0.08)", border: "1px solid rgba(255,46,159,0.2)" }}>
+                <Typography sx={{ color: "#FF2E9F", fontSize: "0.78rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+                  {whatsappError}
+                </Typography>
+              </Box>
+            )}
+            <Button
+              onClick={handleRefreshCode}
+              startIcon={<Icon icon="tabler:refresh" style={{ fontSize: "0.9rem" }} />}
+              sx={{
+                background: "linear-gradient(135deg, #128C7E, #25D366)",
+                color: "#fff", fontFamily: '"Space Grotesk", sans-serif',
+                fontWeight: 600, fontSize: "0.85rem",
+                borderRadius: "10px", px: 3, py: 1,
+              }}
+            >
+              Try Again
+            </Button>
           </Box>
         )}
+
+        {/* Footer note */}
+        {!whatsappJoined && (
+          <Typography sx={{
+            mt: 2.5, textAlign: "center",
+            color: "rgba(200,215,245,0.25)", fontSize: "0.7rem",
+            fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.5,
+          }}>
+            Verification is required once. Re-verification may be needed periodically
+            to confirm you remain connected to our community.
+          </Typography>
+        )}
+
       </DialogContent>
     </Dialog>
   );
@@ -400,7 +401,6 @@ const Withdrawal = () => {
   const user        = useSelector(state => state?.getCurrentUser?.user);
   const { address } = useAccount();
 
-  // Persist pending tx across MetaMask mobile page reloads
   const { savePendingTx, clearPendingTx } = usePendingTx('withdrawal');
 
   const bothConfirmed = useSelector(s => s.socialConfirm.bothConfirmed);
@@ -424,12 +424,21 @@ const Withdrawal = () => {
   const { kgcTokens: withdrawalAmountInKgc } = useGetKGCLiveTokens(withdrawalAmount);
   const { minWithdrawalAmountInKgc, minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
 
-  // Fetch social status from DB when userId is known
+  // ── Fetch social status on mount ──────────────────────────────────
   useEffect(() => {
     if (userId && fetchStatus === "idle") {
       dispatch(fetchSocialStatus(userId));
     }
   }, [userId, fetchStatus, dispatch]);
+
+  // ── Background poll every 60s (re-verification window check) ─────
+  useEffect(() => {
+    if (!userId) return;
+    const interval = setInterval(() => {
+      dispatch(fetchSocialStatus(userId));
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [userId, dispatch]);
 
   useEffect(() => {
     if (isSuccess && isMinWithdrawalUsdcFetched && totalStakedAmountInUSDC > 0 && (totalStakedAmountInUSDC < minWithdrawalAmountInUSDC)) {
@@ -449,7 +458,7 @@ const Withdrawal = () => {
       }));
       toast.error(err.message, { duration: 2000 });
       setLoader(false);
-      clearPendingTx(); // clear on error
+      clearPendingTx();
     }
   }, [isWithdrawSentError, isWithdrawalError]);
 
@@ -483,7 +492,7 @@ const Withdrawal = () => {
           const amount = withdrawalAmountFromContract > data?.stakingAmount
             ? data?.stakingAmount
             : withdrawalAmountFromContract;
-          savePendingTx('withdraw-sent'); // save before withdrawFunds call
+          savePendingTx('withdraw-sent');
           withdrawFunds({
             args: [Number(ethers.utils.parseEther(`${truncateDecimals(amount, 7)}`))],
             from: address,
@@ -499,15 +508,16 @@ const Withdrawal = () => {
   };
 
   const handleSubmit = async () => {
-    // if (!bothConfirmed) {
-    //   setSocialGateOpen(true);
-    //   return;
-    // }
+    // ── Social gate ───────────────────────────────────────────────
+    if (!bothConfirmed) {
+      setSocialGateOpen(true);
+      return;
+    }
     if (chain?.id !== ENV.chainId) return switchNetwork?.(ENV.chainId);
     withdrawAmount();
   };
 
-  const handleBothVerified = () => {
+  const handleVerified = () => {
     setSocialGateOpen(false);
     if (chain?.id !== ENV.chainId) { switchNetwork?.(ENV.chainId); return; }
     withdrawAmount();
@@ -561,12 +571,12 @@ const Withdrawal = () => {
 
   return (
     <>
-      {/* <SocialGateModal
+      <WhatsAppVerifyModal
         open={socialGateOpen}
         onClose={() => setSocialGateOpen(false)}
-        onBothVerified={handleBothVerified}
+        onVerified={handleVerified}
         userId={userId}
-      /> */}
+      />
 
       <Card sx={{ p: 8 }}>
         <Card sx={{ border: 1 }}>

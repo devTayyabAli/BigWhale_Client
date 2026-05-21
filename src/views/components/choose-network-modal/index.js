@@ -39,21 +39,26 @@ const networks = [
   { 
     name: 'Metamask', 
     icon: <img style={{ width: "40px", height: "40px" }} src={`/images/pages/metamask.webp`} />, 
-    // deepLink is computed at click time (see handleNetworkSelection) to capture the current URL
+    // deepLink is computed at click time to capture the current URL
     getDeepLink: () => `https://metamask.app.link/dapp/${window.location.host + window.location.pathname + window.location.search}`,
     walletId: METAMASK_WALLET_ID,
   },
   { 
     name: 'Trust Wallet', 
     icon: <img style={{ width: "40px", height: "40px" }} src={`/images/pages/trust-wallet.jpg`} />, 
-    deepLink: process.env.NEXT_PUBLIC_TRUST_DEEP_LINK,
-    walletId: process.env.NEXT_PUBLIC_TRUST_WALLET_ID 
+    // Dynamic deep link — uses current page URL so it works on any domain/environment
+    getDeepLink: () => `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(window.location.href)}`,
+    walletId: process.env.NEXT_PUBLIC_TRUST_WALLET_ID,
   },
   { 
     name: 'Token Pocket Wallet', 
     icon: <img style={{ width: "40px", height: "40px" }} src={`/images/pages/token-pocket.webp`} />, 
-    deepLink: process.env.NEXT_PUBLIC_TP_DEEP_LINK,
-    walletId: process.env.NEXT_PUBLIC_TOKEN_POCKET_WALLET
+    // Dynamic deep link — uses current page URL so it works on any domain/environment
+    getDeepLink: () => {
+      const params = encodeURIComponent(JSON.stringify({ url: window.location.href, source: 'TokenPocket' }));
+      return `tpdapp://open?params=${params}`;
+    },
+    walletId: process.env.NEXT_PUBLIC_TOKEN_POCKET_WALLET,
   },
   { name: 'WalletConnect (Any Wallet)', icon: <Icon icon="tabler:link" fontSize="2.5rem" />, isWalletConnect: true },
 ];

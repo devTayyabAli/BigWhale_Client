@@ -102,7 +102,7 @@ const navigation = () => {
       children: [
         {
           title: 'Business Plan',
-          path: '/assets/pdf/KGC.pdf',
+          path: '/assets/pdf/BW.pdf',
         },
       ],
     },

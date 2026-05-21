@@ -171,6 +171,13 @@ const AnalyticsDashboard = () => {
           <UserProfileHeader />
         </Grid>
 
+         <Grid item xs={12} md={5}>
+          <AvailableBalance />
+        </Grid>
+        <Grid item xs={12} md={7}>
+          <AvailableStake />
+        </Grid>
+
         {/* Reward Stats */}
         <Grid item xs={12}>
           <SectionHeader icon='tabler:chart-bar' title='Portfolio Overview' subtitle='Your earnings at a glance' />
@@ -216,12 +223,7 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12}>
           <SectionHeader icon='tabler:wallet' title='Wallet & Tokens' subtitle='Manage your assets' />
         </Grid>
-        <Grid item xs={12} md={5}>
-          <AvailableBalance />
-        </Grid>
-        <Grid item xs={12} md={7}>
-          <AvailableStake />
-        </Grid>
+       
 
         {/* Referral Links */}
         <Grid item xs={12}>

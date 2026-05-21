@@ -25,7 +25,9 @@ const metadata = {
   name: "BIGWHALE Platform",
   description: "World's Largest Crypto Earning Platform",
   url: appOrigin,
-  icons: [`${appOrigin}/images/pages/Logo-signup.png`],
+  // pre-loader-new.png is the BIGWHALE logo shown on login/signup — use it here
+  // so WalletConnect displays the correct branding on the connection screen.
+  icons: [`${appOrigin}/images/pages/pre-loader-new.png`],
 };
 
 const walletConnectWalletIds = (ENV?.wallets || []).filter(Boolean);

@@ -66,11 +66,15 @@ export const generateWhatsAppCode = createAsyncThunk(
 
 // ── Thunk: poll backend to check if code was received ────────────────
 // Called every 3s after user sends the message. Backend reads DB.
+// Timestamp param busts browser cache — prevents 304 Not Modified responses.
 export const checkWhatsAppCode = createAsyncThunk(
   "socialConfirm/checkWhatsAppCode",
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await api.get(`${WHATSAPP_CHECK_ENDPOINT}/${userId}`);
+      const res = await api.get(`${WHATSAPP_CHECK_ENDPOINT}/${userId}`, {
+        params: { _t: Date.now() }, // cache-buster
+        headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" },
+      });
       return res.data?.data;
     } catch (err) {
       return rejectWithValue(

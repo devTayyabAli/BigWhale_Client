@@ -12,6 +12,7 @@ import api from "src/api/api";
 import {
   WHATSAPP_CODE_ENDPOINT,
   WHATSAPP_CHECK_ENDPOINT,
+  WHATSAPP_SIMULATE_ENDPOINT,
   SOCIAL_STATUS_ENDPOINT,
 } from "src/api/apiEndPoint";
 
@@ -19,15 +20,16 @@ const initialState = {
   // Persisted in DB
   whatsappJoined:     false,
   whatsappVerifiedAt: null,
-  bothConfirmed:      false,   // alias: whatsappJoined
+  bothConfirmed:      false,
 
-  // Deep-link returned by generateWhatsAppCode
+  // Deep-link + code returned by generateWhatsAppCode
   whatsappLink:       null,
+  whatsappCode:       null,   // raw code e.g. "A3F9C2" — used by dev simulate button
   whatsappCodeExpiry: null,
 
   // Loading / error
-  fetchStatus:    "idle",   // idle | loading | succeeded | failed
-  codeStatus:     "idle",   // idle | loading | succeeded | failed (generating code)
+  fetchStatus:    "idle",
+  codeStatus:     "idle",
 
   whatsappError: null,
   fetchError:    null,
@@ -63,16 +65,32 @@ export const generateWhatsAppCode = createAsyncThunk(
 );
 
 // ── Thunk: poll backend to check if code was received ────────────────
-// Called every 3s after user sends the message. Backend reads Meta API.
+// Called every 3s after user sends the message. Backend reads DB.
 export const checkWhatsAppCode = createAsyncThunk(
   "socialConfirm/checkWhatsAppCode",
   async (userId, { rejectWithValue }) => {
     try {
       const res = await api.get(`${WHATSAPP_CHECK_ENDPOINT}/${userId}`);
-      return res.data?.data; // { whatsappJoined: true/false }
+      return res.data?.data;
     } catch (err) {
       return rejectWithValue(
         err?.response?.data?.message || "Check failed"
+      );
+    }
+  }
+);
+
+// ── Thunk: DEV ONLY — simulate receiving the WhatsApp message ─────────
+// Calls /auth/whatsapp-simulate so you can test without ngrok/Meta webhook.
+export const simulateVerify = createAsyncThunk(
+  "socialConfirm/simulateVerify",
+  async (code, { rejectWithValue }) => {
+    try {
+      const res = await api.post(WHATSAPP_SIMULATE_ENDPOINT, { code });
+      return res.data?.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Simulation failed"
       );
     }
   }
@@ -91,14 +109,15 @@ const socialConfirmSlice = createSlice({
       state.whatsappVerifiedAt = new Date().toISOString();
       state.bothConfirmed      = true;
       state.whatsappLink       = null;
+      state.whatsappCode       = null;
       state.whatsappCodeExpiry = null;
     },
-    // Called when re-verification window expires (server reset)
     resetWhatsAppVerification: (state) => {
       state.whatsappJoined     = false;
       state.whatsappVerifiedAt = null;
       state.bothConfirmed      = false;
       state.whatsappLink       = null;
+      state.whatsappCode       = null;
       state.whatsappCodeExpiry = null;
       state.codeStatus         = "idle";
       state.whatsappError      = null;
@@ -134,10 +153,12 @@ const socialConfirmSlice = createSlice({
       .addCase(generateWhatsAppCode.pending, (state) => {
         state.codeStatus    = "loading";
         state.whatsappError = null;
+        state.whatsappCode  = null;
       })
       .addCase(generateWhatsAppCode.fulfilled, (state, action) => {
         state.codeStatus         = "succeeded";
         state.whatsappLink       = action.payload?.link      || null;
+        state.whatsappCode       = action.payload?.code      || null;
         state.whatsappCodeExpiry = action.payload?.expiresAt || null;
       })
       .addCase(generateWhatsAppCode.rejected, (state, action) => {
@@ -153,8 +174,25 @@ const socialConfirmSlice = createSlice({
           state.whatsappVerifiedAt = new Date().toISOString();
           state.bothConfirmed      = true;
           state.whatsappLink       = null;
+          state.whatsappCode       = null;
           state.whatsappCodeExpiry = null;
         }
+      });
+
+    // ── simulateVerify (dev only) ──────────────────────────────────
+    builder
+      .addCase(simulateVerify.fulfilled, (state, action) => {
+        if (action.payload?.whatsappJoined) {
+          state.whatsappJoined     = true;
+          state.whatsappVerifiedAt = new Date().toISOString();
+          state.bothConfirmed      = true;
+          state.whatsappLink       = null;
+          state.whatsappCode       = null;
+          state.whatsappCodeExpiry = null;
+        }
+      })
+      .addCase(simulateVerify.rejected, (state, action) => {
+        state.whatsappError = action.payload;
       });
   },
 });

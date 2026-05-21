@@ -12,6 +12,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import LinearProgress from "@mui/material/LinearProgress";
+import Fade from "@mui/material/Fade";
 
 // ** React Imports
 import { useDispatch, useSelector } from "react-redux";
@@ -34,6 +35,7 @@ import {
   fetchSocialStatus,
   generateWhatsAppCode,
   checkWhatsAppCode,
+  simulateVerify,
   markWhatsAppVerified,
   clearWhatsAppError,
 } from "src/store/apps/auth/socialConfirmSlice";
@@ -55,11 +57,9 @@ import useGetMinWithdrawalAmountInKgc from "src/hooks/useGetMinWithdrawalAmountI
 import { usePendingTx } from "src/hooks/usePendingTx";
 import Icon from "src/@core/components/icon";
 
-// ** Next
-import { useRouter } from "next/router";
-
-// ── How often to poll for verification while modal is open ───────────
-const POLL_INTERVAL_MS = 3000; // 3 seconds — fast enough to feel real-time
+// ── Poll interval while modal is open ────────────────────────────────
+const POLL_INTERVAL_MS = 3000;
+const IS_DEV = process.env.NODE_ENV === "development";
 
 // ── WhatsApp Verification Modal ──────────────────────────────────────
 const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
@@ -69,11 +69,14 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
   const whatsappJoined     = useSelector(s => s.socialConfirm.whatsappJoined);
   const whatsappVerifiedAt = useSelector(s => s.socialConfirm.whatsappVerifiedAt);
   const whatsappLink       = useSelector(s => s.socialConfirm.whatsappLink);
+  const whatsappCode       = useSelector(s => s.socialConfirm.whatsappCode);
   const whatsappCodeExpiry = useSelector(s => s.socialConfirm.whatsappCodeExpiry);
   const codeStatus         = useSelector(s => s.socialConfirm.codeStatus);
   const whatsappError      = useSelector(s => s.socialConfirm.whatsappError);
 
-  // ── Code expiry countdown ─────────────────────────────────────────
+  const [simulating, setSimulating] = useState(false);
+
+  // ── Expiry countdown ──────────────────────────────────────────────
   const [secondsLeft, setSecondsLeft] = useState(null);
   useEffect(() => {
     if (!whatsappCodeExpiry) { setSecondsLeft(null); return; }
@@ -95,18 +98,15 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
 
   // ── Regenerate when code expires ─────────────────────────────────
   useEffect(() => {
-    if (secondsLeft === 0 && !whatsappJoined && open) {
+    if (secondsLeft === 0 && !whatsappJoined && open && userId) {
       dispatch(generateWhatsAppCode(userId));
     }
   }, [secondsLeft, whatsappJoined, open, userId, dispatch]);
 
-  // ── Poll every 3s while modal is open ────────────────────────────
-  // Calls backend which reads Meta API messages to find the code
+  // ── Poll DB every 3s — detects when webhook has updated the record ─
   const pollRef = useRef(null);
   useEffect(() => {
-    if (!open || !userId || whatsappJoined) return;
-    // Start polling only after the user has a link (i.e. has sent the message)
-    if (!whatsappLink) return;
+    if (!open || !userId || whatsappJoined || !whatsappLink) return;
     pollRef.current = setInterval(() => {
       dispatch(checkWhatsAppCode(userId));
     }, POLL_INTERVAL_MS);
@@ -116,9 +116,7 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
   // ── Socket: instant update when webhook fires ─────────────────────
   useEffect(() => {
     if (!socket || !userId) return;
-    const handleVerified = () => {
-      dispatch(markWhatsAppVerified());
-    };
+    const handleVerified = () => dispatch(markWhatsAppVerified());
     socket.on("whatsappVerified", handleVerified);
     return () => socket.off("whatsappVerified", handleVerified);
   }, [socket, userId, dispatch]);
@@ -126,7 +124,7 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
   // ── Auto-proceed when verified ────────────────────────────────────
   useEffect(() => {
     if (whatsappJoined && open) {
-      const t = setTimeout(() => { onVerified(); }, 1200);
+      const t = setTimeout(() => onVerified(), 1200);
       return () => clearTimeout(t);
     }
   }, [whatsappJoined, open, onVerified]);
@@ -141,9 +139,16 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
     dispatch(generateWhatsAppCode(userId));
   }, [userId, dispatch]);
 
-  // Progress bar value for expiry (0–100)
+  // DEV: simulate the webhook — marks user verified instantly
+  const handleSimulate = useCallback(async () => {
+    if (!whatsappCode) return;
+    setSimulating(true);
+    await dispatch(simulateVerify(whatsappCode));
+    setSimulating(false);
+  }, [whatsappCode, dispatch]);
+
   const progressValue = whatsappCodeExpiry && secondsLeft !== null
-    ? (secondsLeft / 600) * 100   // 600s = 10 min total
+    ? (secondsLeft / 600) * 100
     : 100;
 
   return (
@@ -152,6 +157,8 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
       onClose={onClose}
       maxWidth="xs"
       fullWidth
+      TransitionComponent={Fade}
+      transitionDuration={300}
       PaperProps={{
         sx: {
           background: "rgba(13,18,36,0.97)",
@@ -161,10 +168,8 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
           boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 40px rgba(37,211,102,0.08)",
           overflow: "hidden",
           "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0, left: 0, right: 0,
-            height: "2px",
+            content: '""', position: "absolute",
+            top: 0, left: 0, right: 0, height: "2px",
             background: "linear-gradient(90deg, #128C7E, #25D366, #128C7E)",
           },
         },
@@ -180,6 +185,11 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 14px",
             boxShadow: "0 0 24px rgba(37,211,102,0.45)",
+            animation: whatsappJoined ? "none" : "waPulse 2s ease-in-out infinite",
+            "@keyframes waPulse": {
+              "0%, 100%": { boxShadow: "0 0 24px rgba(37,211,102,0.45)" },
+              "50%":      { boxShadow: "0 0 40px rgba(37,211,102,0.75)" },
+            },
           }}>
             <Icon icon="tabler:brand-whatsapp" style={{ color: "#fff", fontSize: "2rem" }} />
           </Box>
@@ -188,8 +198,8 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
             fontFamily: '"Orbitron", sans-serif',
             fontWeight: 800, fontSize: "1.05rem", letterSpacing: "0.06em",
             background: "linear-gradient(135deg, #25D366, #128C7E)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-            mb: 0.75,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            backgroundClip: "text", mb: 0.75,
           }}>
             WhatsApp Verification
           </Typography>
@@ -198,33 +208,34 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
             color: "rgba(200,215,245,0.5)", fontSize: "0.82rem",
             fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.6,
           }}>
-            Send a quick message to verify your WhatsApp.
-            No button to click — it confirms automatically.
+            Send a quick message to verify. Confirms automatically — no button needed.
           </Typography>
 
           <Box sx={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(37,211,102,0.3), transparent)", mt: 2.5 }} />
         </Box>
 
-        {/* ── Verified state ── */}
+        {/* ── Verified ── */}
         {whatsappJoined ? (
           <Box sx={{
             p: 3, borderRadius: "14px",
             background: "rgba(16,185,129,0.1)",
             border: "1px solid rgba(16,185,129,0.3)",
+            animation: "fadeIn 0.4s ease",
+            "@keyframes fadeIn": { from: { opacity: 0, transform: "translateY(8px)" }, to: { opacity: 1, transform: "translateY(0)" } },
           }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
               <Icon icon="tabler:circle-check-filled" style={{ color: "#10B981", fontSize: "1.5rem", flexShrink: 0 }} />
               <Typography sx={{ color: "#10B981", fontWeight: 700, fontSize: "0.95rem", fontFamily: '"Space Grotesk", sans-serif' }}>
                 WhatsApp Verified ✓
               </Typography>
             </Box>
             {whatsappVerifiedAt && (
-              <Typography sx={{ color: "rgba(16,185,129,0.6)", fontSize: "0.72rem", fontFamily: '"Space Grotesk", sans-serif' }}>
+              <Typography sx={{ color: "rgba(16,185,129,0.6)", fontSize: "0.72rem", fontFamily: '"Space Grotesk", sans-serif', mb: 1.5 }}>
                 Verified on {new Date(whatsappVerifiedAt).toLocaleString()}
               </Typography>
             )}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 2 }}>
-              <CircularProgress size={16} sx={{ color: "#10B981" }} />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <CircularProgress size={14} sx={{ color: "#10B981" }} />
               <Typography sx={{ color: "#10B981", fontWeight: 600, fontSize: "0.82rem", fontFamily: '"Space Grotesk", sans-serif' }}>
                 Proceeding to withdrawal...
               </Typography>
@@ -232,7 +243,6 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
           </Box>
 
         ) : codeStatus === "loading" ? (
-          /* ── Generating code ── */
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 3 }}>
             <CircularProgress size={32} sx={{ color: "#25D366" }} />
             <Typography sx={{ color: "rgba(200,215,245,0.5)", fontSize: "0.82rem", fontFamily: '"Space Grotesk", sans-serif' }}>
@@ -241,41 +251,36 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
           </Box>
 
         ) : whatsappLink ? (
-          /* ── Code ready — show instructions ── */
           <Box>
             {/* Steps */}
-            <Box sx={{ mb: 2.5 }}>
-              {[
-                { num: "1", text: "Tap the button below — WhatsApp will open with your code pre-filled." },
-                { num: "2", text: "Just hit Send. That's it — verification is automatic." },
-              ].map(step => (
-                <Box key={step.num} sx={{ display: "flex", gap: 1.5, mb: 1.5 }}>
-                  <Box sx={{
-                    width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-                    background: "rgba(37,211,102,0.15)",
-                    border: "1px solid rgba(37,211,102,0.3)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "0.7rem", fontWeight: 700, color: "#25D366",
-                    fontFamily: '"Orbitron", sans-serif',
-                  }}>
-                    {step.num}
-                  </Box>
-                  <Typography sx={{ color: "rgba(200,215,245,0.65)", fontSize: "0.82rem", fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.6 }}>
-                    {step.text}
-                  </Typography>
+            {[
+              { num: "1", text: "Tap the button below — WhatsApp opens with your code pre-filled." },
+              { num: "2", text: "Hit Send. Verification is automatic — this page updates instantly." },
+            ].map(step => (
+              <Box key={step.num} sx={{ display: "flex", gap: 1.5, mb: 1.5 }}>
+                <Box sx={{
+                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                  background: "rgba(37,211,102,0.15)", border: "1px solid rgba(37,211,102,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.7rem", fontWeight: 700, color: "#25D366",
+                  fontFamily: '"Orbitron", sans-serif',
+                }}>
+                  {step.num}
                 </Box>
-              ))}
-            </Box>
+                <Typography sx={{ color: "rgba(200,215,245,0.65)", fontSize: "0.82rem", fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.6 }}>
+                  {step.text}
+                </Typography>
+              </Box>
+            ))}
 
-            {/* Open WhatsApp button */}
+            {/* Open WhatsApp */}
             <Button
               fullWidth
               onClick={handleOpenWhatsApp}
               startIcon={<Icon icon="tabler:brand-whatsapp" style={{ fontSize: "1.1rem" }} />}
               sx={{
                 background: "linear-gradient(135deg, #128C7E, #25D366)",
-                color: "#fff",
-                fontFamily: '"Space Grotesk", sans-serif',
+                color: "#fff", fontFamily: '"Space Grotesk", sans-serif',
                 fontWeight: 700, fontSize: "0.9rem",
                 borderRadius: "12px", py: 1.3, mb: 2,
                 transition: "all 0.2s ease",
@@ -288,10 +293,8 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
             {/* Waiting indicator */}
             <Box sx={{
               p: 2, borderRadius: "10px",
-              background: "rgba(37,211,102,0.04)",
-              border: "1px solid rgba(37,211,102,0.12)",
-              display: "flex", alignItems: "center", gap: 1.5,
-              mb: 2,
+              background: "rgba(37,211,102,0.04)", border: "1px solid rgba(37,211,102,0.12)",
+              display: "flex", alignItems: "center", gap: 1.5, mb: 2,
             }}>
               <CircularProgress size={14} sx={{ color: "#25D366", flexShrink: 0 }} />
               <Typography sx={{ color: "rgba(200,215,245,0.5)", fontSize: "0.78rem", fontFamily: '"Space Grotesk", sans-serif' }}>
@@ -301,7 +304,7 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
 
             {/* Expiry countdown */}
             {secondsLeft !== null && (
-              <Box sx={{ mb: 1.5 }}>
+              <Box sx={{ mb: 2 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                   <Typography sx={{ color: "rgba(200,215,245,0.35)", fontSize: "0.7rem", fontFamily: '"Space Grotesk", sans-serif' }}>
                     Code expires in
@@ -310,9 +313,7 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
                     fontSize: "0.7rem", fontFamily: '"Orbitron", sans-serif', fontWeight: 700,
                     color: secondsLeft < 60 ? "#FF2E9F" : "rgba(37,211,102,0.7)",
                   }}>
-                    {secondsLeft < 60
-                      ? `${secondsLeft}s`
-                      : `${Math.floor(secondsLeft / 60)}m ${secondsLeft % 60}s`}
+                    {secondsLeft < 60 ? `${secondsLeft}s` : `${Math.floor(secondsLeft / 60)}m ${secondsLeft % 60}s`}
                   </Typography>
                 </Box>
                 <LinearProgress
@@ -332,6 +333,37 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
               </Box>
             )}
 
+            {/* DEV ONLY: simulate button */}
+            {IS_DEV && whatsappCode && (
+              <Box sx={{
+                p: 2, mb: 2, borderRadius: "10px",
+                background: "rgba(255,200,0,0.06)", border: "1px dashed rgba(255,200,0,0.3)",
+              }}>
+                <Typography sx={{ color: "rgba(255,200,0,0.7)", fontSize: "0.7rem", fontFamily: '"Space Grotesk", sans-serif', mb: 1 }}>
+                  🛠 DEV MODE — skip WhatsApp, simulate verification instantly
+                </Typography>
+                <Typography sx={{ color: "rgba(255,200,0,0.5)", fontSize: "0.68rem", fontFamily: '"Orbitron", sans-serif', mb: 1.5, letterSpacing: "0.1em" }}>
+                  Code: VERIFY-{whatsappCode}
+                </Typography>
+                <Button
+                  fullWidth
+                  size="small"
+                  onClick={handleSimulate}
+                  disabled={simulating}
+                  startIcon={simulating ? <CircularProgress size={12} sx={{ color: "#fff" }} /> : <Icon icon="tabler:test-pipe" style={{ fontSize: "0.85rem" }} />}
+                  sx={{
+                    background: "rgba(255,200,0,0.15)", color: "rgba(255,200,0,0.9)",
+                    border: "1px solid rgba(255,200,0,0.3)",
+                    fontFamily: '"Space Grotesk", sans-serif', fontWeight: 600, fontSize: "0.78rem",
+                    borderRadius: "8px", py: 0.8,
+                    "&:hover": { background: "rgba(255,200,0,0.25)" },
+                  }}
+                >
+                  {simulating ? "Simulating..." : "Simulate Verification"}
+                </Button>
+              </Box>
+            )}
+
             {/* Refresh code */}
             <Box sx={{ textAlign: "center" }}>
               <Typography
@@ -340,8 +372,7 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
                   color: "rgba(37,211,102,0.5)", fontSize: "0.75rem",
                   fontFamily: '"Space Grotesk", sans-serif',
                   cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.5,
-                  "&:hover": { color: "#25D366" },
-                  transition: "color 0.2s",
+                  "&:hover": { color: "#25D366" }, transition: "color 0.2s",
                 }}
               >
                 <Icon icon="tabler:refresh" style={{ fontSize: "0.8rem" }} />
@@ -351,7 +382,7 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
           </Box>
 
         ) : (
-          /* ── Error / no link yet ── */
+          /* Error / no link */
           <Box sx={{ textAlign: "center", py: 2 }}>
             {whatsappError && (
               <Box sx={{ mb: 2, p: 1.5, borderRadius: "8px", background: "rgba(255,46,159,0.08)", border: "1px solid rgba(255,46,159,0.2)" }}>
@@ -375,11 +406,11 @@ const WhatsAppVerifyModal = ({ open, onClose, onVerified, userId }) => {
           </Box>
         )}
 
-        {/* Footer note */}
+        {/* Footer */}
         {!whatsappJoined && (
           <Typography sx={{
             mt: 2.5, textAlign: "center",
-            color: "rgba(200,215,245,0.25)", fontSize: "0.7rem",
+            color: "rgba(200,215,245,0.22)", fontSize: "0.7rem",
             fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.5,
           }}>
             Verification is required once. Re-verification may be needed periodically
@@ -401,21 +432,20 @@ const Withdrawal = () => {
   const [socialGateOpen, setSocialGateOpen] = useState(false);
 
   const dispatch    = useDispatch();
-  const router      = useRouter();
   const user        = useSelector(state => state?.getCurrentUser?.user);
   const { address } = useAccount();
 
-  const { savePendingTx, clearPendingTx } = usePendingTx('withdrawal');
+  const { savePendingTx, clearPendingTx } = usePendingTx("withdrawal");
 
   const bothConfirmed = useSelector(s => s.socialConfirm.bothConfirmed);
   const fetchStatus   = useSelector(s => s.socialConfirm.fetchStatus);
 
-  const { data } = useSelector(state => state?.withdrawal?.fundsWithdrawalAmount || {});
+  const { data }                          = useSelector(state => state?.withdrawal?.fundsWithdrawalAmount || {});
   const { fundsWithdrawal: withdrawResp } = useSelector(state => state.withdrawal);
 
   const socket = useContext(SocketContext);
   const { accError, chain } = useValidateAccount();
-  const { switchNetwork } = useSwitchNetwork({ onSuccess() { withdrawAmount(); } });
+  const { switchNetwork }   = useSwitchNetwork({ onSuccess() { withdrawAmount(); } });
 
   const {
     withdrawFunds, withdrawSentTx,
@@ -425,27 +455,23 @@ const Withdrawal = () => {
   } = useContractWithdrawal(setLoader);
 
   const { tokenBlnc: totalStakedAmountInUSDC, isSuccess } = useGetUSDCTokens(data?.combinedTotalAmount);
-  const { kgcTokens: withdrawalAmountInKgc } = useGetKGCLiveTokens(withdrawalAmount);
-  const { minWithdrawalAmountInKgc, minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
+  const { kgcTokens: withdrawalAmountInKgc }              = useGetKGCLiveTokens(withdrawalAmount);
+  const { minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
 
   // ── Fetch social status on mount ──────────────────────────────────
   useEffect(() => {
-    if (userId && fetchStatus === "idle") {
-      dispatch(fetchSocialStatus(userId));
-    }
+    if (userId && fetchStatus === "idle") dispatch(fetchSocialStatus(userId));
   }, [userId, fetchStatus, dispatch]);
 
   // ── Background poll every 60s (re-verification window check) ─────
   useEffect(() => {
     if (!userId) return;
-    const interval = setInterval(() => {
-      dispatch(fetchSocialStatus(userId));
-    }, 60_000);
+    const interval = setInterval(() => dispatch(fetchSocialStatus(userId)), 60_000);
     return () => clearInterval(interval);
   }, [userId, dispatch]);
 
   useEffect(() => {
-    if (isSuccess && isMinWithdrawalUsdcFetched && totalStakedAmountInUSDC > 0 && (totalStakedAmountInUSDC < minWithdrawalAmountInUSDC)) {
+    if (isSuccess && isMinWithdrawalUsdcFetched && totalStakedAmountInUSDC > 0 && totalStakedAmountInUSDC < minWithdrawalAmountInUSDC) {
       setError(`Minimum withdrawal allowed=${minWithdrawalAmountInUSDC || 0}`);
     } else {
       setError(false);
@@ -496,7 +522,7 @@ const Withdrawal = () => {
           const amount = withdrawalAmountFromContract > data?.stakingAmount
             ? data?.stakingAmount
             : withdrawalAmountFromContract;
-          savePendingTx('withdraw-sent');
+          savePendingTx("withdraw-sent");
           withdrawFunds({
             args: [Number(ethers.utils.parseEther(`${truncateDecimals(amount, 7)}`))],
             from: address,
@@ -512,7 +538,6 @@ const Withdrawal = () => {
   };
 
   const handleSubmit = async () => {
-    // ── Social gate ───────────────────────────────────────────────
     if (!bothConfirmed) {
       setSocialGateOpen(true);
       return;
@@ -561,7 +586,7 @@ const Withdrawal = () => {
     if (socket && userId) {
       const handleWithdrawAmount = () => { if (userId) dispatch(fundsWithdrawalAmount(userId)); };
       socket.on("withdrawAmount", handleWithdrawAmount);
-      return () => { socket.off("withdrawAmount", handleWithdrawAmount); socket.emit("withdrawAmount", userId); };
+      return () => { socket.off("withdrawAmount", handleWithdrawAmount); };
     }
   }, [socket, userId]);
 
@@ -611,11 +636,11 @@ const Withdrawal = () => {
                       if (parts?.length > 1) value = `${parts[0]}.${parts[1]?.slice(0, 10)}`;
                       if (value == 0.0000001) return;
                       const blncError = +value > totalStakedAmountInUSDC;
-                      const minWithDarwalLimitError = +value < minWithdrawalAmountInUSDC;
+                      const minWithdrawalLimitError = +value < minWithdrawalAmountInUSDC;
                       if (blncError) { return setError(`Available balance is ${totalStakedAmountInUSDC || 0}`); }
                       else { setError(false); }
                       if (user?.data?.isWithdrawInactive === true) setError(`We're experiencing a technical issue. Our team is currently working to resolve it.`);
-                      if (minWithDarwalLimitError) setError(`Minimum withdrawal allowed=${minWithdrawalAmountInUSDC || 0}`);
+                      if (minWithdrawalLimitError) setError(`Minimum withdrawal allowed=${minWithdrawalAmountInUSDC || 0}`);
                       if (user?.data?.totalStakeAmount < 50) setError(`Withdrawal unavailable`);
                       setWithdrawalAmount(value);
                     }}

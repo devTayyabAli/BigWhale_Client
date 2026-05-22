@@ -14,6 +14,7 @@ import {
   WHATSAPP_CHECK_ENDPOINT,
   WHATSAPP_SIMULATE_ENDPOINT,
   SOCIAL_STATUS_ENDPOINT,
+  VERIFY_WHATSAPP_ENDPOINT,
 } from "src/api/apiEndPoint";
 
 const initialState = {
@@ -22,10 +23,14 @@ const initialState = {
   whatsappVerifiedAt: null,
   bothConfirmed:      false,
 
-  // Deep-link + code returned by generateWhatsAppCode
+  // Deep-link + code returned by generateWhatsAppCode (kept for legacy/dev)
   whatsappLink:       null,
-  whatsappCode:       null,   // raw code e.g. "A3F9C2" — used by dev simulate button
+  whatsappCode:       null,
   whatsappCodeExpiry: null,
+
+  // Channel self-attestation — confirmWhatsAppJoined
+  confirmStatus: "idle",   // "idle" | "loading" | "succeeded" | "failed"
+  confirmError:  null,
 
   // Loading / error
   fetchStatus:    "idle",
@@ -100,18 +105,37 @@ export const simulateVerify = createAsyncThunk(
   }
 );
 
+// ── Thunk: confirm WhatsApp channel follow (self-attestation) ──────────
+// User clicks "Follow Channel" → opens channel URL → clicks "I've Joined"
+// → this thunk calls POST /auth/verify-whatsapp → sets whatsappJoined = true
+export const confirmWhatsAppJoined = createAsyncThunk(
+  "socialConfirm/confirmJoined",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.post(VERIFY_WHATSAPP_ENDPOINT, { userId });
+      return res.data?.data; // { whatsappJoined: true }
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Failed to confirm channel membership"
+      );
+    }
+  }
+);
+
 // ── Slice ────────────────────────────────────────────────────────────
 const socialConfirmSlice = createSlice({
   name: "socialConfirm",
   initialState,
   reducers: {
     clearWhatsAppError: (state) => { state.whatsappError = null; },
+    clearConfirmError:  (state) => { state.confirmError = null; state.confirmStatus = "idle"; },
     resetSocialConfirm: () => initialState,
     // Called by socket event "whatsappVerified"
     markWhatsAppVerified: (state) => {
       state.whatsappJoined     = true;
       state.whatsappVerifiedAt = new Date().toISOString();
       state.bothConfirmed      = true;
+      state.confirmStatus      = "succeeded";
       state.whatsappLink       = null;
       state.whatsappCode       = null;
       state.whatsappCodeExpiry = null;
@@ -120,6 +144,8 @@ const socialConfirmSlice = createSlice({
       state.whatsappJoined     = false;
       state.whatsappVerifiedAt = null;
       state.bothConfirmed      = false;
+      state.confirmStatus      = "idle";
+      state.confirmError       = null;
       state.whatsappLink       = null;
       state.whatsappCode       = null;
       state.whatsappCodeExpiry = null;
@@ -190,6 +216,7 @@ const socialConfirmSlice = createSlice({
           state.whatsappJoined     = true;
           state.whatsappVerifiedAt = new Date().toISOString();
           state.bothConfirmed      = true;
+          state.confirmStatus      = "succeeded";
           state.whatsappLink       = null;
           state.whatsappCode       = null;
           state.whatsappCodeExpiry = null;
@@ -198,14 +225,34 @@ const socialConfirmSlice = createSlice({
       .addCase(simulateVerify.rejected, (state, action) => {
         state.whatsappError = action.payload;
       });
+
+    // ── confirmWhatsAppJoined (channel self-attestation) ───────────
+    builder
+      .addCase(confirmWhatsAppJoined.pending, (state) => {
+        state.confirmStatus = "loading";
+        state.confirmError  = null;
+      })
+      .addCase(confirmWhatsAppJoined.fulfilled, (state) => {
+        state.confirmStatus      = "succeeded";
+        state.whatsappJoined     = true;
+        state.whatsappVerifiedAt = new Date().toISOString();
+        state.bothConfirmed      = true;
+      })
+      .addCase(confirmWhatsAppJoined.rejected, (state, action) => {
+        state.confirmStatus = "failed";
+        state.confirmError  = action.payload;
+      });
   },
 });
 
 export const {
   clearWhatsAppError,
+  clearConfirmError,
   resetSocialConfirm,
   markWhatsAppVerified,
   resetWhatsAppVerification,
 } = socialConfirmSlice.actions;
+
+export { confirmWhatsAppJoined };
 
 export default socialConfirmSlice.reducer;

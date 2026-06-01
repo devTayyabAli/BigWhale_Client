@@ -44,6 +44,17 @@ const InstantBonus = () => {
                 );
             },
         },
+         {
+            flex: 0.1,
+            minWidth: 105,
+            field: "userName",
+            headerName: "USERNAME",
+            renderCell: ({ row }) => (
+                <Typography sx={{ color: "text.secondary" }}>
+                    {row?.userName ? `${row?.userName}` : `--`}
+                </Typography>
+            ),
+        },
         {
             flex: 0.1,
             minWidth: 105,
@@ -55,6 +66,7 @@ const InstantBonus = () => {
                 </Typography>
             ),
         },
+       
         {
             flex: 0.1,
             minWidth: 105,

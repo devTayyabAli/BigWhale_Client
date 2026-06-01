@@ -88,7 +88,7 @@ const FileUploaderRestrictions = () => {
               borderRadius: 1,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: theme => `rgba(${theme.palette.customColors.main}, 0.08)`
+              backgroundColor: theme => `rgba(200, 215, 245, 0.08)`
             }}
           >
             <Icon icon='tabler:upload' fontSize='1.75rem' />

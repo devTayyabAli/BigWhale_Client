@@ -54,7 +54,7 @@ export const EditorWrapper = styled('div')(({ theme }) => ({
           : {}),
         '&:hover': {
           boxShadow: 'none',
-          backgroundColor: `rgba(${theme.palette.customColors.main}, 0.08)`
+          backgroundColor: `rgba(200, 215, 245, 0.08)`
         }
       },
       '& .rdw-embedded-modal-size-input, & .rdw-image-modal-size-input': {

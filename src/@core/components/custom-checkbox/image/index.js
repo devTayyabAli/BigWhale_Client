@@ -32,7 +32,7 @@ const CustomCheckboxImg = props => {
             ...(selected.includes(value)
               ? { borderColor: `${color}.main` }
               : {
-                  '&:hover': { borderColor: theme => `rgba(${theme.palette.customColors.main}, 0.25)` },
+                  '&:hover': { borderColor: theme => `rgba(200, 215, 245, 0.25)` },
                   '&:not(:hover)': {
                     '& .MuiCheckbox-root': { display: 'none' }
                   }

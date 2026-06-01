@@ -111,6 +111,8 @@ const StakingRewardBonus = () => {
     setValue(val);
   };
 
+
+
   return (
     <Card>
       <CardHeader

@@ -20,8 +20,10 @@ const DefaultPalette = (mode, skin) => {
   const metallicSilver = '#C0C7D1'
 
   // Always dark mode for BIGWHALE
-  const darkColor = '200, 215, 245'
-  const lightColor = '47, 43, 61'
+  // NOTE: stored as hex so MUI's alpha()/darken()/lighten() utilities never
+  // receive a bare "R, G, B" string, which MUI does not support as a color.
+  const darkColor = '#C8D7F5'       // rgb(200, 215, 245)
+  const lightColor = '#2F2B3D'      // rgb(47, 43, 61)
   const darkPaperBgColor = '#0D1224'
   const mainColor = darkColor
 
@@ -119,9 +121,9 @@ const DefaultPalette = (mode, skin) => {
       A700: '#050816'
     },
     text: {
-      primary: `rgba(${mainColor}, 0.92)`,
-      secondary: `rgba(${mainColor}, 0.68)`,
-      disabled: `rgba(${mainColor}, 0.38)`
+      primary: `rgba(200, 215, 245, 0.92)`,
+      secondary: `rgba(200, 215, 245, 0.68)`,
+      disabled: `rgba(200, 215, 245, 0.38)`
     },
     divider: `rgba(0, 229, 255, 0.12)`,
     background: {
@@ -129,12 +131,12 @@ const DefaultPalette = (mode, skin) => {
       default: defaultBgColor()
     },
     action: {
-      active: `rgba(${mainColor}, 0.54)`,
+      active: `rgba(200, 215, 245, 0.54)`,
       hover: `rgba(0, 229, 255, 0.06)`,
       selected: `rgba(0, 229, 255, 0.1)`,
       selectedOpacity: 0.1,
-      disabled: `rgba(${mainColor}, 0.26)`,
-      disabledBackground: `rgba(${mainColor}, 0.08)`,
+      disabled: `rgba(200, 215, 245, 0.26)`,
+      disabledBackground: `rgba(200, 215, 245, 0.08)`,
       focus: `rgba(0, 229, 255, 0.12)`
     }
   }

@@ -32,7 +32,7 @@ const CustomCheckboxIcons = props => {
                   borderColor: `${color}.main`,
                   '& svg': { color: theme => `${theme.palette.primary.main} !important` }
                 }
-              : { '&:hover': { borderColor: theme => `rgba(${theme.palette.customColors.main}, 0.25)` } })
+              : { '&:hover': { borderColor: theme => `rgba(200, 215, 245, 0.25)` } })
           }}
         >
           {icon ? <Icon icon={icon} {...iconProps} /> : null}

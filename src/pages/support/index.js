@@ -20,7 +20,6 @@ import ReactDraftWysiwyg from 'src/@core/components/react-draft-wysiwyg'
 import { createSupportTicket, getAllSupportTickets, getSupportTicketsByUserId } from 'src/store/apps/support/supportTicketsSlice'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/router'
-import ViewTicket from './ViewTicket'
 
 const schema = yup.object().shape({
     // userId: yup.string().required("Login User ID is required"),
@@ -175,8 +174,6 @@ function Support() {
                                                 </Typography>
                                             </Grid>
                                             <Grid item xs={12}>
-                                                <ViewTicket />
-
                                                 <CustomTextField
                                                     fullWidth
                                                     label=""

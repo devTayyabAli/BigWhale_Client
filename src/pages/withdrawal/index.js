@@ -350,6 +350,7 @@ const Withdrawal = () => {
   const [userId, setUserId] = useState(null);
   const [loader, setLoader] = useState(false);
   const [socialGateOpen, setSocialGateOpen] = useState(false);
+  const [contractWithdrawAmount, setContractWithdrawAmount] = useState(0);
 
   const dispatch    = useDispatch();
   const user        = useSelector(state => state?.getCurrentUser?.user);
@@ -442,6 +443,7 @@ const Withdrawal = () => {
           const amount = withdrawalAmountFromContract > data?.stakingAmount
             ? data?.stakingAmount
             : withdrawalAmountFromContract;
+          setContractWithdrawAmount(amount);
           savePendingTx("withdraw-sent");
           withdrawFunds({
             args: [Number(ethers.utils.parseEther(`${truncateDecimals(amount, 7)}`))],
@@ -474,13 +476,15 @@ const Withdrawal = () => {
 
   useEffect(() => {
     if (withdrawSentTx?.hash) {
+      const usdRate = Number(withdrawalAmount) / Number(withdrawalAmountInKgc);
+      const fiatPortion = contractWithdrawAmount * usdRate;
       dispatch(completeFundsWithdrawal({
         id: withdrawResp.data._id,
         data: {
           txHash: withdrawSentTx?.hash,
           userId,
-          fiatAmount: withdrawalAmount,
-          cryptoAmount: Number(withdrawalAmountInKgc),
+          fiatAmount: truncateDecimals(fiatPortion, 2),
+          cryptoAmount: contractWithdrawAmount,
         },
       }));
     }
@@ -570,6 +574,33 @@ const Withdrawal = () => {
                     }}
                   />
                 </Grid>
+                {withdrawalAmount && !error && (
+                  <Grid item xs={12}>
+                    <Box sx={{ p: 4, borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, letterSpacing: "0.05em", color: "rgba(200,215,245,0.8)" }}>
+                        WITHDRAWAL BREAKDOWN
+                      </Typography>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>User Receives (50%)</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#25D366" }}>
+                          ${(Number(withdrawalAmount) * 0.5).toFixed(2)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Reinvest (30%)</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#10B981" }}>
+                          ${(Number(withdrawalAmount) * 0.3).toFixed(2)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Company Fee (20%)</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF2E9F" }}>
+                          ${(Number(withdrawalAmount) * 0.2).toFixed(2)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                )}
                 {error && (
                   <Typography variant="body2" style={{ color: "#C9A84C" }} sx={{ fontWeight: 600, marginLeft: "1.5rem" }}>
                     {error}

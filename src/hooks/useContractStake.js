@@ -27,7 +27,6 @@ const useContractStake = (tokensToFetch) => {
     functionName: "minimumAmount",
     // args: [],
   });
-
   useEffect(() => {
     if (minAmount) {
       setStakeLimit((prevStakeLimit) => ({

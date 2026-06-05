@@ -95,7 +95,7 @@ const Stake = () => {
   function truncateDecimals(number, digits) {
     const power = Math.pow(10, digits);
     return Math.floor(number * power) / power;
-}
+  }
   //sockets
   const socket = useContext(SocketContext);
   const {
@@ -127,6 +127,7 @@ const Stake = () => {
       clearPendingTx(); // tx confirmed — clear saved state
     }
   }, [isstakeCompleted]);
+
   useEffect(() => {
     if (
       isStakeSentError ||
@@ -170,7 +171,7 @@ const Stake = () => {
       const response = await dispatch(
         stakeKGC({
           userId,
-          amount:roundKgcAmount(Number(stakeAmountInKGC)) ,
+          amount: roundKgcAmount(Number(stakeAmountInKGC)),
         })
       );
 
@@ -223,7 +224,7 @@ const Stake = () => {
     } else {
       setError(null);
     }
-  }, [isFetchedUSDC, stakeLimit,stakeAmountInKGC,availableKGC]);
+  }, [isFetchedUSDC, stakeLimit, stakeAmountInKGC, availableKGC]);
   useEffect(() => {
     if (user) {
       setUserId(user?.data?._id);
@@ -238,7 +239,7 @@ const Stake = () => {
   useEffect(() => {
     if (socket && userId) {
       socket.emit("join", userId); // replace userId
-      const handleStake = ({}) => {
+      const handleStake = ({ }) => {
         toast.success("Tokens Staked Successfully!", {
           duration: 2000,
         });
@@ -313,8 +314,7 @@ const Stake = () => {
 
                     if (isMinError || isMaxError) {
                       setMinMaxError(
-                        `${isMaxError ? "Max" : "Min"} ${
-                          isMaxError ? stakeLimitInUSDC?.max : stakeLimitInUSDC?.min
+                        `${isMaxError ? "Max" : "Min"} ${isMaxError ? stakeLimitInUSDC?.max : stakeLimitInUSDC?.min
                         } usdt tokens allowed`
                       );
                     } else {
@@ -342,7 +342,7 @@ const Stake = () => {
                     {error}
                   </Typography>
                 )}
-                {minMaxError &&!error&& (
+                {minMaxError && !error && (
                   <Typography
                     variant="body2"
                     style={{ color: "#C9A84C" }}
@@ -373,7 +373,7 @@ const Stake = () => {
             </Grid>
             <Box sx={{ display: "flex", mt: 10, alignItems: "center" }}>
               <Box sx={{ mr: 4 }}>
-              <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
+                <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
 
                 {/* <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
                   <g fill="none">
@@ -416,7 +416,7 @@ const Stake = () => {
             </Box>
             <Box sx={{ display: "flex", mt: 6, alignItems: "center" }}>
               <Box sx={{ mr: 4 }}>
-              <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
+                <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
 
                 {/* <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
                   <g fill="none">
@@ -447,7 +447,7 @@ const Stake = () => {
                     }}
                   >
                     {availableKGC
-                      ? truncateDecimals(availableKGC,5)
+                      ? truncateDecimals(availableKGC, 5)
                       : 0}
                   </Typography>
                   <Typography
@@ -461,7 +461,7 @@ const Stake = () => {
             </Box>
             <Box sx={{ display: "flex", mt: 6, alignItems: "center" }}>
               <Box sx={{ mr: 4 }}>
-              <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
+                <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
 
                 {/* <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
                   <g fill="none">
@@ -491,7 +491,7 @@ const Stake = () => {
                       fontSize: 20,
                     }}
                   >
-                    { availableUSDC?truncateDecimals(availableUSDC,5) : 0}
+                    {availableUSDC ? truncateDecimals(availableUSDC, 5) : 0}
                   </Typography>
                   <Typography
                     variant="span"
@@ -585,13 +585,13 @@ const Stake = () => {
                   minMaxError
                 )
                   ? {
-                      scale: [1, 1.02, 1],
-                      boxShadow: [
-                        "0px 0px 0px rgba(201,168,76,0)",
-                        "0px 0px 15px rgba(201,168,76,0.5)",
-                        "0px 0px 0px rgba(201,168,76,0)",
-                      ],
-                    }
+                    scale: [1, 1.02, 1],
+                    boxShadow: [
+                      "0px 0px 0px rgba(201,168,76,0)",
+                      "0px 0px 15px rgba(201,168,76,0.5)",
+                      "0px 0px 0px rgba(201,168,76,0)",
+                    ],
+                  }
                   : {}
               }
               transition={{ duration: 1.5, repeat: Infinity }}
@@ -614,20 +614,19 @@ const Stake = () => {
                 onClick={handleSubmit}
               >
                 {accError
-                  ? `Please connect with ${
-                      user?.data?.walletAddress?.slice(0, 6) +
-                      "..." +
-                      user?.data?.walletAddress?.slice(-6)
-                    } wallet address `
+                  ? `Please connect with ${user?.data?.walletAddress?.slice(0, 6) +
+                  "..." +
+                  user?.data?.walletAddress?.slice(-6)
+                  } wallet address `
                   : isApprovekgcTxInProgress
-                  ? "Approve Transaction"
-                  : isApprovalTokensWaiting
-                  ? "Approving Tokens"
-                  : isStakekgcSentTxInProgress
-                  ? "Approving Transaction"
-                  : isStakekgcTxInProgress
-                  ? "Transaction is in Progress, Please wait!"
-                  : "Activate Now"}
+                    ? "Approve Transaction"
+                    : isApprovalTokensWaiting
+                      ? "Approving Tokens"
+                      : isStakekgcSentTxInProgress
+                        ? "Approving Transaction"
+                        : isStakekgcTxInProgress
+                          ? "Transaction is in Progress, Please wait!"
+                          : "Activate Now"}
               </Button>
             </motion.div>
           </CardActions>

@@ -581,19 +581,13 @@ const Withdrawal = () => {
                         WITHDRAWAL BREAKDOWN
                       </Typography>
                       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>User Receives (50%)</Typography>
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>User Receives (80%)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#25D366" }}>
-                          ${(Number(withdrawalAmount) * 0.5).toFixed(2)}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Reinvest (30%)</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#10B981" }}>
-                          ${(Number(withdrawalAmount) * 0.3).toFixed(2)}
+                          ${(Number(withdrawalAmount) * 0.8).toFixed(2)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Company Fee (20%)</Typography>
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Salary Rank (20%)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF2E9F" }}>
                           ${(Number(withdrawalAmount) * 0.2).toFixed(2)}
                         </Typography>

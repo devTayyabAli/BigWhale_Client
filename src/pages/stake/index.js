@@ -564,7 +564,7 @@ const Stake = () => {
                   variant="span"
                   sx={{ px: 2, color: "#7367f0", fontWeight: 600 }}
                 >
-                  0.40%
+                  0.50%
                 </Typography>
               </Typography>
             </Box>

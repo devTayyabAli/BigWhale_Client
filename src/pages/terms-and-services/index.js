@@ -111,12 +111,12 @@ const TermsAndServices = () => {
                 </li>
                 <li>
                   <Typography variant="body1">
-                    Staking Capping 2X
+                    Staking Capping 3X
                   </Typography>
                 </li>
                 <li>
                   <Typography variant="body1">
-                    Capping 5X (inc all income)
+                    Capping 3X (inc all income)
                   </Typography>
                 </li>
                 <li>

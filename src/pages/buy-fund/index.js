@@ -171,7 +171,7 @@ const BuyFund = () => {
                   Per day:
                 </Typography>
                 <Typography variant="span" sx={{ px: 2, color: "", fontWeight: 600 }}>
-                  0.40%
+                  0.50%
                 </Typography>
               </Typography>
             </Box>

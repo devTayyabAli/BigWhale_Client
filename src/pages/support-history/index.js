@@ -287,7 +287,7 @@ const SupportHistory = () => {
             description: ticket.description,
             priority: ticket.priority,
             status: ticket.status,
-            media: ticket.picturesOrVideos.map(media => ({
+            media: (ticket.picturesOrVideos || []).map(media => ({
                 type: media.type,
                 url: media.url,
                 name: media.name,

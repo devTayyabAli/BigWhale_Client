@@ -94,18 +94,18 @@ const FundTransfer = () => {
     approvalTxError,
   } = useApproveKGCTokens();
   const { kgcTokens: kgcLiveRate } = useGetKGCLiveTokens(1);
-    const {
-      transferKgcTokens,
-      transferSentTx,
-      isTransferkgcSentTxInProgress,
-      isTransferkgcTxInProgress,
-      isTransferKgcTxSent,
-      isTransferCompleted,
-      isTransferSentError,
-      transferSentError,
-      isTransferError,
-      transferTxError,
-    } = useContractFundTransfer();
+  const {
+    transferKgcTokens,
+    transferSentTx,
+    isTransferkgcSentTxInProgress,
+    isTransferkgcTxInProgress,
+    isTransferKgcTxSent,
+    isTransferCompleted,
+    isTransferSentError,
+    transferSentError,
+    isTransferError,
+    transferTxError,
+  } = useContractFundTransfer();
 
   useEffect(() => {
     if (isApprovalCompleted) {
@@ -189,8 +189,8 @@ const FundTransfer = () => {
       let maxAmountTransfer = 0;
       if (Number(buyFundAmountInKGC) > availableKGC) {
         maxAmountTransfer = availableKGC;
-      }else {
-        maxAmountTransfer=Number(buyFundAmountInKGC)
+      } else {
+        maxAmountTransfer = Number(buyFundAmountInKGC)
       }
 
       const payload = {
@@ -245,7 +245,7 @@ const FundTransfer = () => {
   useEffect(() => {
     if (socket && userId) {
       socket.emit("join", userId); // replace userId
-      const handleKGCTransfer = ({}) => {
+      const handleKGCTransfer = ({ }) => {
         formik.resetForm();
         setTransferAmount({
           cryptoAmount: 0,
@@ -364,17 +364,17 @@ const FundTransfer = () => {
                 />
                 {(formik?.values?.amount < 1 ||
                   formik?.values?.amount > availableUSDC) && (
-                  <Typography
-                    variant="p"
-                    sx={{ color: "#f16d75", fontSize: 12 }}
-                  >
-                    {formik?.values?.amount < 1
-                      ? "Note : Minimum Transfer 1 USDT($)."
-                      : formik?.values?.amount > availableUSDC
-                      ? `Note : Maximum Transfer ${availableUSDC} USDT($).`
-                      : ""}
-                  </Typography>
-                )}
+                    <Typography
+                      variant="p"
+                      sx={{ color: "#f16d75", fontSize: 12 }}
+                    >
+                      {formik?.values?.amount < 1
+                        ? "Note : Minimum Transfer 1 USDT($)."
+                        : formik?.values?.amount > availableUSDC
+                          ? `Note : Maximum Transfer ${availableUSDC} USDT($).`
+                          : ""}
+                    </Typography>
+                  )}
               </Grid>
             </Grid>
             <Grid container spacing={5} sx={{ mb: 4 }}>
@@ -395,33 +395,33 @@ const FundTransfer = () => {
               fullWidth
               type="submit"
               sx={{ mr: 2 }}
-              // disabled={true}
-              disabled={
-                isApprovekgcTxInProgress ||
-                isApprovalTokensWaiting ||
-                isTransferkgcTxInProgress ||
-                isTransferkgcSentTxInProgress ||
-                formik?.values?.amount < 1 ||
-                formik?.values?.amount > availableUSDC ||
-                accError || userDetails === null
-              }
+              disabled={true}
+              // disabled={
+              //   isApprovekgcTxInProgress ||
+              //   isApprovalTokensWaiting ||
+              //   isTransferkgcTxInProgress ||
+              //   isTransferkgcSentTxInProgress ||
+              //   formik?.values?.amount < 1 ||
+              //   formik?.values?.amount > availableUSDC ||
+              //   accError || userDetails === null
+              // }
               variant="contained"
             >
-              {accError
-                ? `Please connect with ${
-                    user?.data?.walletAddress?.slice(0, 6) +
-                    "..." +
-                    user?.data?.walletAddress?.slice(-6)
-                  } wallet address `
+              Not Active Yet
+              {/* {accError
+                ? `Please connect with ${user?.data?.walletAddress?.slice(0, 6) +
+                "..." +
+                user?.data?.walletAddress?.slice(-6)
+                } wallet address `
                 : isApprovekgcTxInProgress
-                ? "Approve Transaction"
-                : isApprovalTokensWaiting
-                ? "Approving Tokens"
-                : isTransferkgcSentTxInProgress
-                ? "Approving Transaction"
-                : isTransferkgcTxInProgress
-                ? "Transaction is in Progress, Please wait!"
-                : " Activate Now"}
+                  ? "Approve Transaction"
+                  : isApprovalTokensWaiting
+                    ? "Approving Tokens"
+                    : isTransferkgcSentTxInProgress
+                      ? "Approving Transaction"
+                      : isTransferkgcTxInProgress
+                        ? "Transaction is in Progress, Please wait!"
+                        : " Activate Now"} */}
             </Button>
           </CardActions>
         </form>

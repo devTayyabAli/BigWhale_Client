@@ -6,11 +6,12 @@ import api from "src/api/api";
 const initialState = {
   status: "idle",
   error: null,
-  leadershipBonusData: null, // Added successPayload to store the payload on success
+  leadershipBonusData: null,
   referralIncomeBonusData: null,
   stakingRewardBonusData: null,
   rankData: null,
   instantBonus: null,
+  salaryRankHistory: null,
 };
 
 export const getLeadershipBonusData = createAsyncThunk(
@@ -112,6 +113,22 @@ export const getInstantBonus = createAsyncThunk(
   }
 );
 
+export const getSalaryRankHistory = createAsyncThunk(
+  "getSalaryRankHistory",
+  async (params, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().login.user.data.token;
+      const response = await api.get("/referral/salary-rank-history", {
+        params,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+);
+
 
 const bonusSlice = createSlice({
   name: "bonus",
@@ -171,6 +188,17 @@ const bonusSlice = createSlice({
         state.instantBonus = action.payload;
       })
       .addCase(getInstantBonus.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
+      .addCase(getSalaryRankHistory.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(getSalaryRankHistory.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.salaryRankHistory = action.payload;
+      })
+      .addCase(getSalaryRankHistory.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;
       });

@@ -10,22 +10,20 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import IconButton from '@mui/material/IconButton'
-import * as source from 'src/views/components/swiper/SwiperSourceCode'
+import Divider from '@mui/material/Divider'
+import Badge from '@mui/material/Badge'
 
 // ** Icon Imports
 import Icon from 'src/@core/components/icon'
 import { Box, Grid } from '@mui/material'
-import Swiper from '../components/swiper'
-import SwiperControls from 'src/views/components/swiper/SwiperControls'
-import CardSnippet from 'src/@core/components/card-snippet'
 import KeenSliderWrapper from 'src/@core/styles/libs/keen-slider'
 import CustomChip from 'src/@core/components/mui/chip'
 
-import Badge from '@mui/material/Badge'
 // ** Third Party Components
 import clsx from 'clsx'
 import { useKeenSlider } from 'keen-slider/react'
 
+// ─── Styled close button ───────────────────────────────────────────────────────
 const CustomCloseButton = styled(IconButton)(({ theme }) => ({
     top: 0,
     right: 0,
@@ -41,375 +39,294 @@ const CustomCloseButton = styled(IconButton)(({ theme }) => ({
     }
 }))
 
-
-
+// ─── Status / Priority colour maps ────────────────────────────────────────────
 const statusColors = {
-    ToDo: {
-        bgColor: "#007bff", // Bootstrap Primary Blue
-        textColor: "#ffffff" // White
-    },
-    Pending: {
-        bgColor: "#fff9c4", // Bootstrap Warning Yellow
-        textColor: "#f57f17" // Black
-    },
-    Completed: {
-        bgColor: "#28a745", // Bootstrap Success Green
-        textColor: "#ffffff" // White
-    },
-    Failed: {
-        bgColor: "#dc3545", // Bootstrap Danger Red
-        textColor: "#ffffff" // White
-    }
-};
+    ToDo:      { bgColor: '#007bff', textColor: '#ffffff' },
+    Pending:   { bgColor: '#fff9c4', textColor: '#f57f17' },
+    Completed: { bgColor: '#28a745', textColor: '#ffffff' },
+    Failed:    { bgColor: '#dc3545', textColor: '#ffffff' },
+}
 
 const priorityColors = {
-    Low: {
-        bgColor: "#e0f7fa", // Light cyan
-        textColor: "#00796b" // Teal
-    },
-    Medium: {
-        bgColor: "#fff9c4", // Light yellow
-        textColor: "#f57f17" // Orange
-    },
-    Urgent: {
-        bgColor: "#ffe0b2", // Light orange
-        textColor: "#e65100" // Dark orange
-    },
-    "Critical Error": {
-        bgColor: "#ffccbc", // Light red
-        textColor: "#c62828" // Dark red
-    }
-};
+    Low:            { bgColor: '#e0f7fa', textColor: '#00796b' },
+    Medium:         { bgColor: '#fff9c4', textColor: '#f57f17' },
+    Urgent:         { bgColor: '#ffe0b2', textColor: '#e65100' },
+    'Critical Error':{ bgColor: '#ffccbc', textColor: '#c62828' },
+}
 
-
-
+// ─── Tiny chip helpers ─────────────────────────────────────────────────────────
 const PriorityLabel = ({ priority }) => {
-    const { bgColor, textColor } = priorityColors[priority] || {
-        bgColor: "#ffffff", // Default color
-        textColor: "#000000" // Default text color
-    };
+    const { bgColor, textColor } = priorityColors[priority] || { bgColor: '#e0e0e0', textColor: '#333' }
     return (
         <CustomChip
-            // skin='light'
             color='success'
-            sx={{
-                fontWeight: 500, borderRadius: 1, width: "7rem",
-                backgroundColor: (bgColor),
-                color: textColor, fontSize: theme => theme.typography.body2.fontSize
-            }}
-            label={
-                <Box sx={{ display: 'flex', alignItems: 'center', '& svg': { mr: 1 } }}>
-                    <span>{priority}</span>
-                </Box>
-            }
+            sx={{ fontWeight: 600, borderRadius: 1, backgroundColor: bgColor, color: textColor, fontSize: 13 }}
+            label={<span>{priority || 'N/A'}</span>}
         />
-    );
-};
-
+    )
+}
 
 const StatusLabel = ({ status }) => {
-    const { bgColor, textColor } = statusColors[status] || {
-        bgColor: "#ffffff", // Default color
-        textColor: "#000000" // Default text color
-    };
-
+    const { bgColor, textColor } = statusColors[status] || { bgColor: '#e0e0e0', textColor: '#333' }
     return (
         <CustomChip
             skin='light'
             color='success'
-            sx={{ fontWeight: 500, borderRadius: 1, color: textColor, backgroundColor: bgColor, fontSize: theme => theme.typography.body2.fontSize }}
-            label={
-                <Box sx={{ display: 'flex', alignItems: 'center', '& svg': { mr: 1 } }}>
-                    {/* <Icon icon='tabler:arrow-up' fontSize='1rem' /> */}
-                    <span>{status}</span>
-                </Box>
-            }
+            sx={{ fontWeight: 600, borderRadius: 1, backgroundColor: bgColor, color: textColor, fontSize: 13 }}
+            label={<span>{status || 'N/A'}</span>}
         />
-    );
-};
+    )
+}
 
-export default function ViewTicket({ setOpen, open, direction, selectedTicket }) {
+// ─── URL helper: swap hard-coded prod host with the active API origin ──────────
+const getMediaUrl = (url) => {
+    if (!url) return ''
+    const apiBaseUrl = process.env.NEXT_PUBLIC_APP_API_BASE_URL
+    if (apiBaseUrl) {
+        try {
+            const origin = apiBaseUrl.startsWith('http')
+                ? new URL(apiBaseUrl).origin
+                : typeof window !== 'undefined'
+                    ? window.location.origin
+                    : ''
+            if (origin) return url.replace(/https?:\/\/[^/]+/i, origin)
+        } catch (e) {
+            // ignore
+        }
+    }
+    return url
+}
 
-    const handleClose = () => setOpen(false)
+// ─── Detail row ────────────────────────────────────────────────────────────────
+const DetailRow = ({ label, value }) => (
+    <Box>
+        <Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {label}
+        </Typography>
+        <Typography variant='body2' sx={{ color: 'text.primary', mt: 0.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {value || 'N/A'}
+        </Typography>
+    </Box>
+)
+
+// ─── Image slider ──────────────────────────────────────────────────────────────
+const ImageSlider = ({ images, direction }) => {
     const [loaded, setLoaded] = useState(false)
     const [currentSlide, setCurrentSlide] = useState(0)
-    const [currentVideoSlide, setCurrentVideoSlide] = useState(0)
-
-
-
-    // ** Hook
     const [sliderRef, instanceRef] = useKeenSlider({
         rtl: direction === 'rtl',
-        slideChanged(slider) {
-            setCurrentSlide(slider.track.details.rel)
-        },
-        created() {
-            setLoaded(true)
-        }
+        slideChanged(slider) { setCurrentSlide(slider.track.details.rel) },
+        created() { setLoaded(true) },
     })
 
-    const [sliderVideoRef, instanceVieoRef] = useKeenSlider({
-        rtl: direction === 'rtl',
-        slideChanged(slider) {
-            setCurrentVideoSlide(slider.track.details.rel)
-        },
-        created() {
-            setLoaded(true)
-        }
-    })
+    if (!images?.length) return null
     return (
-        <div>
-
-            <Dialog
-                open={open}
-                onClose={handleClose}
-                maxWidth={"md"}
-                aria-labelledby='customized-dialog-title'
-                sx={{ '& .MuiDialog-paper': { overflow: 'visible' } }}
-            >
-                <DialogTitle id='customized-dialog-title' sx={{ p: 4 }}>
-                    <Typography variant='h6' component='span'>
-                        View Ticket
-                    </Typography>
-                    <CustomCloseButton aria-label='close' onClick={handleClose}>
-                        <Icon icon='tabler:x' fontSize='1.25rem' />
-                    </CustomCloseButton>
-                </DialogTitle>
-                <DialogContent dividers sx={{ p: theme => `${theme.spacing(4)} !important` }}>
-                    <Grid container gap={5}>
-                        {/* Left Panel: Swiper and Video */}
-                        <Grid
-                            item
-                            xs={12}
-                            md={6.2}
-                            lg={7}
-
-                        >
-                            {
-                                selectedTicket?.media?.filter(item => item?.type === "image")?.length > 0 &&
-                                <Box>
-
-                                    <KeenSliderWrapper>
-                                        <Box className='navigation-wrapper'>
-                                            <Box ref={sliderRef} className='keen-slider'>
-                                                {
-                                                    selectedTicket?.media?.filter(item => item?.type === "image")?.map((item, index) => (
-                                                        <Box key={index} className='keen-slider__slide' sx={{ width: "500px !important" }}>
-                                                            <img src={item?.url} alt='swiper 1' style={{ height: "500px !important", width: "500px !important" }} />
-                                                        </Box>
-
-                                                    ))}
-
-                                            </Box>
-                                            {loaded && instanceRef.current && (
-                                                <>
-                                                    <Icon
-                                                        icon='tabler:chevron-left'
-                                                        className={clsx('arrow arrow-left', {
-                                                            'arrow-disabled': currentSlide === 0
-                                                        })}
-                                                        onClick={e => e.stopPropagation() || instanceRef?.current?.prev()}
-                                                    />
-
-                                                    <Icon
-                                                        icon='tabler:chevron-right'
-                                                        className={clsx('arrow arrow-right', {
-                                                            'arrow-disabled': currentSlide === instanceRef?.current?.track?.details?.slides?.length - 1
-                                                        })}
-                                                        onClick={e => e.stopPropagation() || instanceRef?.current?.next()}
-                                                    />
-                                                </>
-                                            )}
-                                        </Box>
-                                        {loaded && instanceRef.current && (
-                                            <Box className='swiper-dots'>
-                                                {[...Array(instanceRef?.current?.track?.details?.slides?.length).keys()]?.map(idx => {
-                                                    return (
-                                                        <Badge
-                                                            key={idx}
-                                                            variant='dot'
-                                                            component='div'
-                                                            className={clsx({
-                                                                active: currentSlide === idx
-                                                            })}
-                                                            onClick={() => {
-                                                                instanceRef.current?.moveToIdx(idx)
-                                                            }}
-                                                        ></Badge>
-                                                    )
-                                                })}
-                                            </Box>
-                                        )}
-                                    </KeenSliderWrapper>
-                                </Box>
-                            }
-                            {
-                                selectedTicket?.media?.filter(item => item?.type === "video")?.length > 0 &&
-                                <Box sx={{ mt: "2rem" }}>
-                                    <KeenSliderWrapper>
-                                        <Box className='navigation-wrapper'>
-                                            <Box ref={sliderVideoRef} className='keen-slider'>
-                                                {selectedTicket?.media?.filter(item => item?.type === "video")?.map((item, index) => (
-                                                    <Box key={index} className='keen-slider__slide' sx={{ width: "500px !important" }}>
-                                                        <video
-                                                            controls
-                                                            src={item?.url}
-                                                            muted
-                                                            loop
-                                                            // poster="http://localhost:8000/uploads/media/media-1729757235424-62040682.jpg"
-                                                            style={{ width: "100%", height: "100%" }}
-                                                        />
-                                                    </Box>
-                                                ))
-                                                }
-
-
-                                            </Box>
-                                            {loaded && instanceVieoRef.current && (
-                                                <>
-                                                    <Icon
-                                                        icon='tabler:chevron-left'
-                                                        className={clsx('arrow arrow-left', {
-                                                            'arrow-disabled': currentVideoSlide === 0
-                                                        })}
-                                                        onClick={e => e.stopPropagation() || instanceVieoRef.current?.prev()}
-                                                    />
-
-                                                    <Icon
-                                                        icon='tabler:chevron-right'
-                                                        className={clsx('arrow arrow-right', {
-                                                            'arrow-disabled': currentVideoSlide === instanceVieoRef.current?.track?.details?.slides?.length - 1
-                                                        })}
-                                                        onClick={e => e.stopPropagation() || instanceVieoRef?.current?.next()}
-                                                    />
-                                                </>
-                                            )}
-                                        </Box>
-                                        {loaded && instanceVieoRef.current && (
-                                            <Box className='swiper-dots'>
-                                                {[...Array(instanceVieoRef.current?.track?.details?.slides?.length).keys()]?.map(idx => {
-                                                    return (
-                                                        <Badge
-                                                            key={idx}
-                                                            variant='dot'
-                                                            component='div'
-                                                            className={clsx({
-                                                                active: currentSlide === idx
-                                                            })}
-                                                            onClick={() => {
-                                                                instanceVieoRef.current?.moveToIdx(idx)
-                                                            }}
-                                                        ></Badge>
-                                                    )
-                                                })}
-                                            </Box>
-                                        )}
-                                    </KeenSliderWrapper>
-
-                                    {/* <ReactPlayer
-                                    url={selectedProduct?.videoUrl}
-                                    width="100%"
-                                    height="300px"
-                                    style={{ borderRadius: "10px" }}
-                                    controls={true}
-                                /> */}
-                                </Box>
-                            }
-
-                        </Grid>
-
-                        {/* Right Panel: Details */}
-                        <Grid
-                            item
-                            xs={12}
-                            md={4}
-                            lg={4}
-                        >
-                            <Box>
-                                <Typography
-                                    variant="h3"
-                                    sx={{ fontWeight: 700, color: "#141414" }}
-                                >
-                                    Ticket Details
-                                </Typography>
-
-                                <Box>
-                                    {/* <Box sx={{ display: "flex", gap: "10px", marginTop: "1rem" }}>
-
-                                        <Typography
-                                            variant="h6"
-                                            sx={{ fontWeight: 700, color: "#141414" }}
-                                        >
-                                            User Id :
-                                        </Typography>
-                                        {selectedTicket?.userId}
-                                    </Box> */}
-
-                                    <Box sx={{ display: "flex", gap: "10px", marginTop: "1rem" }}>
-                                        <Typography
-                                            variant="h6"
-                                            sx={{ fontWeight: 700, color: "#141414" }}
-                                        >
-                                            UserName:
-                                        </Typography>
-                                        {selectedTicket?.userName}
-
-                                    </Box>
-
-
-                                    <Typography
-                                        variant="h6"
-                                        sx={{ fontWeight: 700, color: "#141414", marginTop: "1rem" }}
-                                    >
-                                        Subject  :
-                                    </Typography>
-                                    <p>{selectedTicket?.subject}</p>
-
-                                    <Typography
-                                        variant="h6"
-                                        sx={{ fontWeight: 700, color: "#141414" }}
-                                    >
-                                        Description  :
-                                    </Typography>
-                                    <p>{selectedTicket?.description}</p>
-
-                                    <Box >
-                                        <Box sx={{ display: "flex", gap: "10px" }}>
-                                            <Typography
-                                                variant="h6"
-                                                sx={{ fontWeight: 700, color: "#141414" }}
-                                            >
-                                                Priority  :
-                                            </Typography>
-                                            <PriorityLabel priority={selectedTicket?.priority} />
-                                        </Box>
-                                        <Box sx={{ display: "flex", gap: "10px", marginTop: "2rem" }}>
-                                            <Typography
-                                                variant="h6"
-                                                sx={{ fontWeight: 700, color: "#141414" }}
-                                            >
-                                                Status  :
-                                            </Typography>
-                                            <StatusLabel status={selectedTicket?.status} />
-                                        </Box>
-                                    </Box>
-
-
-
-
-                                </Box>
-
-
-
+        <Box>
+            <Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px', mb: 1, display: 'block' }}>
+                Images
+            </Typography>
+            <KeenSliderWrapper>
+                <Box className='navigation-wrapper' sx={{ borderRadius: 2, overflow: 'hidden', background: theme => theme.palette.action.hover }}>
+                    <Box
+                        ref={sliderRef}
+                        className='keen-slider'
+                        sx={{ height: 260 }}
+                    >
+                        {images.map((item, index) => (
+                            <Box
+                                key={index}
+                                className='keen-slider__slide'
+                                sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}
+                            >
+                                <img
+                                    src={getMediaUrl(item?.url)}
+                                    alt={`Attachment ${index + 1}`}
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8 }}
+                                />
                             </Box>
+                        ))}
+                    </Box>
+                    {loaded && instanceRef.current && images.length > 1 && (
+                        <>
+                            <Icon
+                                icon='tabler:chevron-left'
+                                className={clsx('arrow arrow-left', { 'arrow-disabled': currentSlide === 0 })}
+                                onClick={e => e.stopPropagation() || instanceRef.current?.prev()}
+                            />
+                            <Icon
+                                icon='tabler:chevron-right'
+                                className={clsx('arrow arrow-right', { 'arrow-disabled': currentSlide === images.length - 1 })}
+                                onClick={e => e.stopPropagation() || instanceRef.current?.next()}
+                            />
+                        </>
+                    )}
+                </Box>
+                {loaded && instanceRef.current && images.length > 1 && (
+                    <Box className='swiper-dots' sx={{ mt: 2 }}>
+                        {images.map((_, idx) => (
+                            <Badge
+                                key={idx}
+                                variant='dot'
+                                component='div'
+                                className={clsx({ active: currentSlide === idx })}
+                                onClick={() => instanceRef.current?.moveToIdx(idx)}
+                            />
+                        ))}
+                    </Box>
+                )}
+            </KeenSliderWrapper>
+        </Box>
+    )
+}
+
+// ─── Video slider ──────────────────────────────────────────────────────────────
+const VideoSlider = ({ videos, direction }) => {
+    const [loaded, setLoaded] = useState(false)
+    const [currentSlide, setCurrentSlide] = useState(0)
+    const [sliderRef, instanceRef] = useKeenSlider({
+        rtl: direction === 'rtl',
+        slideChanged(slider) { setCurrentSlide(slider.track.details.rel) },
+        created() { setLoaded(true) },
+    })
+
+    if (!videos?.length) return null
+    return (
+        <Box sx={{ mt: 4 }}>
+            <Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px', mb: 1, display: 'block' }}>
+                Videos
+            </Typography>
+            <KeenSliderWrapper>
+                <Box className='navigation-wrapper' sx={{ borderRadius: 2, overflow: 'hidden', background: theme => theme.palette.action.hover }}>
+                    <Box ref={sliderRef} className='keen-slider' sx={{ height: 240 }}>
+                        {videos.map((item, index) => (
+                            <Box
+                                key={index}
+                                className='keen-slider__slide'
+                                sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}
+                            >
+                                <video
+                                    controls
+                                    src={getMediaUrl(item?.url)}
+                                    muted
+                                    loop
+                                    style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8 }}
+                                />
+                            </Box>
+                        ))}
+                    </Box>
+                    {loaded && instanceRef.current && videos.length > 1 && (
+                        <>
+                            <Icon
+                                icon='tabler:chevron-left'
+                                className={clsx('arrow arrow-left', { 'arrow-disabled': currentSlide === 0 })}
+                                onClick={e => e.stopPropagation() || instanceRef.current?.prev()}
+                            />
+                            <Icon
+                                icon='tabler:chevron-right'
+                                className={clsx('arrow arrow-right', { 'arrow-disabled': currentSlide === videos.length - 1 })}
+                                onClick={e => e.stopPropagation() || instanceRef.current?.next()}
+                            />
+                        </>
+                    )}
+                </Box>
+                {loaded && instanceRef.current && videos.length > 1 && (
+                    <Box className='swiper-dots' sx={{ mt: 2 }}>
+                        {videos.map((_, idx) => (
+                            <Badge
+                                key={idx}
+                                variant='dot'
+                                component='div'
+                                className={clsx({ active: currentSlide === idx })}
+                                onClick={() => instanceRef.current?.moveToIdx(idx)}
+                            />
+                        ))}
+                    </Box>
+                )}
+            </KeenSliderWrapper>
+        </Box>
+    )
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
+export default function ViewTicket({ setOpen, open, direction, selectedTicket }) {
+    const handleClose = () => setOpen(false)
+
+    const images = selectedTicket?.media?.filter(item => item?.type === 'image') || []
+    const videos = selectedTicket?.media?.filter(item => item?.type === 'video') || []
+    const hasMedia = images.length > 0 || videos.length > 0
+
+    return (
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            fullWidth
+            maxWidth='md'
+            aria-labelledby='view-ticket-dialog-title'
+            sx={{ '& .MuiDialog-paper': { overflow: 'visible' } }}
+        >
+            {/* Title */}
+            <DialogTitle id='view-ticket-dialog-title' sx={{ px: 6, py: 4 }}>
+                <Typography variant='h6' component='span' sx={{ fontWeight: 700 }}>
+                    View Ticket
+                </Typography>
+                <CustomCloseButton aria-label='close' onClick={handleClose}>
+                    <Icon icon='tabler:x' fontSize='1.25rem' />
+                </CustomCloseButton>
+            </DialogTitle>
+
+            <Divider />
+
+            {/* Body */}
+            <DialogContent sx={{ px: 6, py: 5 }}>
+                <Grid container spacing={6}>
+
+                    {/* ── Left: media ─────────────────────────────────── */}
+                    {hasMedia && (
+                        <Grid item xs={12} md={6}>
+                            <ImageSlider images={images} direction={direction} />
+                            <VideoSlider videos={videos} direction={direction} />
                         </Grid>
+                    )}
+
+                    {/* ── Right: details ──────────────────────────────── */}
+                    <Grid item xs={12} md={hasMedia ? 6 : 12}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, height: '100%' }}>
+
+                            <Typography
+                                variant='h6'
+                                sx={{ fontWeight: 700, color: 'text.primary', pb: 2, borderBottom: 1, borderColor: 'divider' }}
+                            >
+                                Ticket Details
+                            </Typography>
+
+                            <DetailRow label='Username' value={selectedTicket?.userName} />
+                            <DetailRow label='Subject'  value={selectedTicket?.subject} />
+                            <DetailRow label='Description' value={selectedTicket?.description} />
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 70 }}>
+                                    Priority
+                                </Typography>
+                                <PriorityLabel priority={selectedTicket?.priority} />
+                            </Box>
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Typography variant='caption' sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 70 }}>
+                                    Status
+                                </Typography>
+                                <StatusLabel status={selectedTicket?.status} />
+                            </Box>
+                        </Box>
                     </Grid>
 
-                </DialogContent>
-                <DialogActions sx={{ p: theme => `${theme.spacing(3)} !important` }}>
-                    <Button onClick={handleClose}>Close</Button>
-                </DialogActions>
-            </Dialog>
-        </div>
+                </Grid>
+            </DialogContent>
+
+            <Divider />
+
+            <DialogActions sx={{ px: 6, py: 3 }}>
+                <Button variant='outlined' onClick={handleClose}>Close</Button>
+            </DialogActions>
+        </Dialog>
     )
 }

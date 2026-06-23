@@ -34,10 +34,10 @@ const navigation = () => {
       title: 'Transaction',
       icon: 'tabler:arrows-exchange',
       children: [
-        {
-          title: 'Fund Transfer',
-          path: '/fund-transfer',
-        },
+        // {
+        //   title: 'Fund Transfer',
+        //   path: '/fund-transfer',
+        // },
         {
           title: 'Buy BW',
           path: '/buy-funds',
@@ -86,13 +86,17 @@ const navigation = () => {
           title: 'Referral Income',
           path: '/bonus/referral-income-bonus',
         },
-        {
-          title: 'Leadership Bonus',
-          path: '/bonus/leadership-bonus',
-        },
+        // {
+        //   title: 'Leadership Bonus',
+        //   path: '/bonus/leadership-bonus',
+        // },
         {
           title: 'Rank Status',
           path: '/bonus/rank-status',
+        },
+        {
+          title: 'Salary Rank History',
+          path: '/bonus/salary-rank-history',
         },
       ],
     },

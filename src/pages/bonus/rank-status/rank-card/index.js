@@ -114,7 +114,7 @@ const RankCard = ({ rank, index }) => {
           pb: 3,
         }}
       >
-        {/* <Box
+        <Box
           sx={{
             display: "flex",
             flexDirection: "column",
@@ -138,7 +138,7 @@ const RankCard = ({ rank, index }) => {
               {directTeam?.status ? "√" : "x"}
             </Typography>
           </Box>
-        </Box> */}
+        </Box>
         <Box
           sx={{
             display: "flex",
@@ -201,7 +201,7 @@ const RankCard = ({ rank, index }) => {
             </Typography>
           </Box>
         </Box>
-        {/* {index === 3 || index === 4 || index === 5 || index === 6 ? (
+        {index === 3 || index === 4 || index === 5 || index === 6 ? (
           <Box
             sx={{
               display: "flex",
@@ -288,7 +288,7 @@ const RankCard = ({ rank, index }) => {
             </Box>
           </Box>
           </>
-        )} */}
+        )}
       </Box>
       <Box
         sx={{

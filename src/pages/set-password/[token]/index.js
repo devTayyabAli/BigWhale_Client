@@ -79,11 +79,11 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const backgroundImageUrl = "BG-new-kgc";
   const imageSource =
-  skin === "bordered"
-    ? "auth-v2-login-illustration-bordered"
-    : settings.mode === "dark"
-    ? "Logo-signup"
-    : "Logo-signup";
+    skin === "bordered"
+      ? "auth-v2-login-illustration-bordered"
+      : settings.mode === "dark"
+        ? "Logo-signup"
+        : "Logo-signup";
 
   useEffect(() => {
     const { token } = router.query;
@@ -133,30 +133,31 @@ const ResetPassword = () => {
 
   return (
     <Box className="content-right" sx={{ backgroundColor: "background.paper" }}>
-    {!hidden ? (
-      <Box
-      sx={{
-        flex: 1,
-        display: "flex",
-        position: "relative",
-        alignItems: "center",
-        borderRadius: "20px",
-        justifyContent: "center",
-        // backgroundColor: "customColors.bodyBg",
-        backgroundImage: `url(/images/pages/${backgroundImageUrl}.jpg)`,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
-        backgroundSize: "cover",
-        margin: () => spacing(8, 0, 8, 8),
-      }}
-    >
-      <SetPasswordIllustration
-        alt="login-illustration"
-        src={`/images/pages/${imageSource}.png`}
-      />
-      <FooterIllustrationsV2 />
-    </Box>
-    ) : null}
+      {!hidden ? (
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            position: "relative",
+            alignItems: "center",
+            borderRadius: "20px",
+            justifyContent: "center",
+            // backgroundColor: "customColors.bodyBg",
+            backgroundImage: `url(/images/pages/logInPic.jpeg)`,
+
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            backgroundSize: "cover",
+            margin: () => spacing(8, 0, 8, 8),
+          }}
+        >
+          {/* <SetPasswordIllustration
+            alt="login-illustration"
+            src={`/images/pages/${imageSource}.png`}
+          />
+          <FooterIllustrationsV2 /> */}
+        </Box>
+      ) : null}
       <RightWrapper>
         <Box
           sx={{
@@ -168,130 +169,130 @@ const ResetPassword = () => {
           }}
         >
           <Box sx={{ width: "100%", maxWidth: 600 }}>
-              <Box>
-                <Grid container spacing={6} sx={{ py: 4 }}>
-                  <Grid item xs={12} md={6} lg={3} mt={2} sx={{ whiteSpace: 'nowrap' }}>
-                    New Password
-                  </Grid>
-                  <Grid item xs={12} md={6} lg={9}>
-                    <Controller
-                      name="password"
-                      control={control}
-                      rules={{}}
-                      render={({ field: { value, onChange } }) => (
-                        <CustomTextField
-                          fullWidth
-                          value={value}
-                          label=""
-                          onChange={onChange}
-                          placeholder="New Password"
-                          error={Boolean(errors.password)}
-                          aria-describedby="validation-schema-first-name"
-                          {...(errors.password && {
-                            helperText: errors.password.message,
-                          })}
-                          type={showPassword ? "text" : "password"}
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  edge="end"
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  <Icon
-                                    fontSize="1.25rem"
-                                    icon={
-                                      showPassword
-                                        ? "tabler:eye"
-                                        : "tabler:eye-off"
-                                    }
-                                  />
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
-                    />
-                    <Box sx={{ color: "#f16d75", fontSize: 13, pt: 4 }}>
-                      Important note : Keep your account password safe & secure,
-                      do not share with any one.
-                      <Box sx={{ color: "#f16d75", fontSize: 13 }}>
-                        Strong Password like this BW@token.0x9#
-                      </Box>
+            <Box>
+              <Grid container spacing={6} sx={{ py: 4 }}>
+                <Grid item xs={12} md={6} lg={4} mt={2} sx={{ whiteSpace: 'nowrap' }}>
+                  New Password
+                </Grid>
+                <Grid item xs={12} md={6} lg={8}>
+                  <Controller
+                    name="password"
+                    control={control}
+                    rules={{}}
+                    render={({ field: { value, onChange } }) => (
+                      <CustomTextField
+                        fullWidth
+                        value={value}
+                        label=""
+                        onChange={onChange}
+                        placeholder="New Password"
+                        error={Boolean(errors.password)}
+                        aria-describedby="validation-schema-first-name"
+                        {...(errors.password && {
+                          helperText: errors.password.message,
+                        })}
+                        type={showPassword ? "text" : "password"}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                edge="end"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                <Icon
+                                  fontSize="1.25rem"
+                                  icon={
+                                    showPassword
+                                      ? "tabler:eye"
+                                      : "tabler:eye-off"
+                                  }
+                                />
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                  <Box sx={{ color: "#f16d75", fontSize: 13, pt: 4 }}>
+                    Important note : Keep your account password safe & secure,
+                    do not share with any one.
+                    <Box sx={{ color: "#f16d75", fontSize: 13 }}>
+                      Strong Password like this BW@token.0x9#
                     </Box>
-                  </Grid>
+                  </Box>
                 </Grid>
-                <Grid container spacing={6} sx={{ py: 4 }}>
-                  <Grid item xs={12} md={6} lg={3} mt={2} sx={{ whiteSpace: 'nowrap' }}>
-                    Confirm Password
-                  </Grid>
-                  <Grid item xs={12} md={6} lg={9}>
-                    <Controller
-                      name="confirmPassword"
-                      control={control}
-                      rules={{}}
-                      render={({ field: { value, onChange } }) => (
-                        <CustomTextField
-                          fullWidth
-                          value={value}
-                          label=""
-                          onChange={onChange}
-                          placeholder="Confirm Password"
-                          error={Boolean(errors.confirmPassword)}
-                          aria-describedby="validation-schema-confirm-password"
-                          {...(errors.confirmPassword && {
-                            helperText: errors.confirmPassword.message,
-                          })}
-                          type={showConfirmPassword ? "text" : "password"}
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  edge="end"
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                >
-                                  <Icon
-                                    fontSize="1.25rem"
-                                    icon={
-                                      showConfirmPassword
-                                        ? "tabler:eye"
-                                        : "tabler:eye-off"
-                                    }
-                                  />
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid>
+              </Grid>
+              <Grid container spacing={6} sx={{ py: 4 }}>
+                <Grid item xs={12} md={6} lg={4} mt={2} sx={{ whiteSpace: 'nowrap' }}>
+                  Confirm Password
                 </Grid>
-                <Grid container spacing={6} sx={{ py: 4 }}>
-                  <Grid item xs={12} md={6} lg={3}></Grid>
-                  <Grid item xs={12} md={6} lg={9}>
-                    <Button
-                      fullWidth
-                      onClick={handleSubmit(onSubmit)}
-                      sx={{
-                        mr: 2,
-                        mb: 4,
-                        py: 4,
-                        background: "#214fbe",
-                        "&:hover": {
-                          backgroundColor: "#1d439e",
-                        },
-                      }}
-                      variant="contained"
-                    >
-                      Reset Password
-                    </Button>
-                  </Grid>
+                <Grid item xs={12} md={6} lg={8}>
+                  <Controller
+                    name="confirmPassword"
+                    control={control}
+                    rules={{}}
+                    render={({ field: { value, onChange } }) => (
+                      <CustomTextField
+                        fullWidth
+                        value={value}
+                        label=""
+                        onChange={onChange}
+                        placeholder="Confirm Password"
+                        error={Boolean(errors.confirmPassword)}
+                        aria-describedby="validation-schema-confirm-password"
+                        {...(errors.confirmPassword && {
+                          helperText: errors.confirmPassword.message,
+                        })}
+                        type={showConfirmPassword ? "text" : "password"}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                edge="end"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              >
+                                <Icon
+                                  fontSize="1.25rem"
+                                  icon={
+                                    showConfirmPassword
+                                      ? "tabler:eye"
+                                      : "tabler:eye-off"
+                                  }
+                                />
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
                 </Grid>
-              </Box>
+              </Grid>
+              <Grid container spacing={6} sx={{ py: 4 }}>
+                <Grid item xs={12} md={6} lg={4}></Grid>
+                <Grid item xs={12} md={6} lg={8}>
+                  <Button
+                    fullWidth
+                    onClick={handleSubmit(onSubmit)}
+                    sx={{
+                      mr: 2,
+                      mb: 4,
+                      py: 4,
+                      background: "#214fbe",
+                      "&:hover": {
+                        backgroundColor: "#1d439e",
+                      },
+                    }}
+                    variant="contained"
+                  >
+                    Reset Password
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
           </Box>
         </Box>
       </RightWrapper>

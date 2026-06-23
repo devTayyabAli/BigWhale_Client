@@ -28,8 +28,28 @@ const FileUploaderMultiple = ({files=[],setFiles}) => {
   })
 
   const renderFilePreview = file => {
+    const getMediaUrl = (url) => {
+      if (!url) return "";
+      const apiBaseUrl = process.env.NEXT_PUBLIC_APP_API_BASE_URL;
+      if (apiBaseUrl) {
+        try {
+          const origin = apiBaseUrl.startsWith('http') 
+            ? new URL(apiBaseUrl).origin 
+            : typeof window !== 'undefined' 
+              ? window.location.origin 
+              : '';
+          if (origin) {
+            return url.replace(/https?:\/\/[^\/]+/i, origin);
+          }
+        } catch (e) {
+          console.error("Error parsing API URL:", e);
+        }
+      }
+      return url;
+    };
+
     if (file.type=='image' || file.type.startsWith('image')) {
-      return <img width={38} height={38} alt={file.name} src={ file.url ? file.url : URL.createObjectURL(file)} />
+      return <img width={38} height={38} alt={file.name} src={ file.url ? getMediaUrl(file.url) : URL.createObjectURL(file)} />
     } else {
       return <Icon icon='tabler:file-description' />
     }

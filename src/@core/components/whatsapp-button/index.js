@@ -2,6 +2,11 @@
 import Zoom from '@mui/material/Zoom'
 import { styled } from '@mui/material/styles'
 import useScrollTrigger from '@mui/material/useScrollTrigger'
+
+// ** Redux
+import { useSelector } from 'react-redux'
+
+// ** Fallback from env (used only when DB value is not yet loaded)
 import { ENV } from 'src/configs/env'
 
 const ScrollToTopStyled = styled('div')(({ theme }) => ({
@@ -26,6 +31,11 @@ const WhatsAppButton = props => {
   // ** Props
   const { children, className } = props
 
+  // ** Read live value from Redux (set by admin via bw-admin panel)
+  // Fall back to NEXT_PUBLIC_WHATSAPP_NO env var if not yet loaded from DB
+  const whatsappNumber = useSelector((state) => state?.settings?.whatsappNumber)
+  const number = whatsappNumber || ENV.whatsappUrl
+
   // ** init trigger
   const trigger = useScrollTrigger({
     threshold: 400,
@@ -33,16 +43,18 @@ const WhatsAppButton = props => {
   })
 
   const handleWhatsAppClick = () => {
-      const url = `https://wa.me/${ENV.whatsappUrl}`;
-      window.open(url, '_blank');
-    };
+    if (!number) return
+    const url = `https://wa.me/${number}`
+    window.open(url, '_blank')
+  }
+
+  // Don't render the button if no number is configured at all
+  if (!number) return null
 
   return (
-
-      <ScrollToTopStyled className={className} onClick={handleWhatsAppClick} role='presentation'>
-        {children}
-      </ScrollToTopStyled>
-
+    <ScrollToTopStyled className={className} onClick={handleWhatsAppClick} role='presentation'>
+      {children}
+    </ScrollToTopStyled>
   )
 }
 

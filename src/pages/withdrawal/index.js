@@ -364,6 +364,10 @@ const Withdrawal = () => {
   const { data }                          = useSelector(state => state?.withdrawal?.fundsWithdrawalAmount || {});
   const { fundsWithdrawal: withdrawResp } = useSelector(state => state.withdrawal);
 
+  // Network fee (in KGC) returned by the server — deducted from the partial
+  // (other-reward) transfer leg so the UI shows the real net amount.
+  const networkFeeKgc = Number(data?.data?.networkFeeKgc || 0);
+
   const socket = useContext(SocketContext);
   const { accError, chain } = useValidateAccount();
   const { switchNetwork }   = useSwitchNetwork({ onSuccess() { withdrawAmount(); } });
@@ -586,6 +590,22 @@ const Withdrawal = () => {
                           ${(Number(withdrawalAmount) * 0.8).toFixed(2)}
                         </Typography>
                       </Box>
+                      {networkFeeKgc > 0 && (
+                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
+                          <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Network Fee (gas)</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF9F43" }}>
+                            −{networkFeeKgc.toFixed(4)} BW
+                          </Typography>
+                        </Box>
+                      )}
+                      {networkFeeKgc > 0 && (
+                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
+                          <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.8)", fontWeight: 600 }}>You Actually Receive</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "#25D366" }}>
+                            ${Math.max(0, Number(withdrawalAmount) * 0.8 - networkFeeKgc).toFixed(4)}
+                          </Typography>
+                        </Box>
+                      )}
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Salary Rank (20%)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF2E9F" }}>

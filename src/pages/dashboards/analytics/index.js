@@ -155,7 +155,7 @@ const AnalyticsDashboard = () => {
     },
     { title: 'Staking Bonus', worth: referralStatsData?.stakingRewardBonus || 0 },
     { title: 'Level Bonus', worth: referralStatsData?.referralLevelBonus || 0 },
-    { title: 'Leadership Bonus', worth: referralStatsData?.leadershipBonus || 0 },
+    { title: 'Salary Bonus', worth: referralStatsData?.salaryBonus || 0 },
     { title: 'Instant Bonus', worth: referralStatsData?.instantRewardBonus || 0 },
     { title: 'Total Bonus', worth: referralStatsData?.totalBonus || 0 },
     { title: 'Total Withdrawal', worth: referralStatsData?.totalWithdrawal || 0 },

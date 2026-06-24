@@ -6,7 +6,8 @@ import authConfig from "src/configs/auth";
 
 // ** Store Imports
 import { store } from "src/store";
-import { Provider } from "react-redux";
+import { Provider, useDispatch } from "react-redux";
+import { fetchAppSettings } from "src/store/apps/settings/settingsSlice";
 
 // ** Icon Imports
 import Icon from "src/@core/components/icon";
@@ -181,6 +182,8 @@ const App = (props) => {
     import("src/iconify-bundle/icons-bundle-react");
     // Load fake-db mock adapter client-side
     import("src/@fake-db");
+    // Fetch live WhatsApp settings from the backend (admin-configurable)
+    store.dispatch(fetchAppSettings());
   }, []);
 
   useEffect(() => {

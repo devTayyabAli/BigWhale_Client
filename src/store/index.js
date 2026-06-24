@@ -25,6 +25,7 @@ import withdrawalReducer from "./apps/withdrawal/withdrawalSlice"
 import completeWithdrawReducer from "./apps/withdrawal/completeWithdrawalSlice"
 import completeTransactionEventsReducer from "./apps/transaction/completeTransactionEvents"
 import socialConfirmReducer from "./apps/auth/socialConfirmSlice"
+import settingsReducer from "./apps/settings/settingsSlice"
 // Load user data from localStorage during store initialization
 const preloadedState = {
   login: {
@@ -55,6 +56,7 @@ export const store = configureStore({
     completeTransactionEvents:completeTransactionEventsReducer,
     support:supportReducer,
     socialConfirm: socialConfirmReducer,
+    settings:      settingsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

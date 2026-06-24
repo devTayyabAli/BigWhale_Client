@@ -12,7 +12,7 @@ const CARD_META = {
   'Account Status':    { icon: 'tabler:user-check',    color: '0,229,255',   gradient: 'linear-gradient(135deg, #00E5FF, #00C2FF)' },
   'Staking Bonus':     { icon: 'tabler:lock',           color: '168,85,247',  gradient: 'linear-gradient(135deg, #A855F7, #9333EA)' },
   'Level Bonus':       { icon: 'tabler:hierarchy',      color: '0,229,255',   gradient: 'linear-gradient(135deg, #00E5FF, #A855F7)' },
-  'Leadership Bonus':  { icon: 'tabler:trophy',         color: '255,46,159',  gradient: 'linear-gradient(135deg, #FF2E9F, #CC0066)' },
+  'Salary Bonus':      { icon: 'tabler:trophy',         color: '255,46,159',  gradient: 'linear-gradient(135deg, #FF2E9F, #CC0066)' },
   'Instant Bonus':     { icon: 'tabler:bolt',           color: '245,158,11',  gradient: 'linear-gradient(135deg, #F59E0B, #D97706)' },
   'Total Bonus':       { icon: 'tabler:chart-bar',      color: '16,185,129',  gradient: 'linear-gradient(135deg, #10B981, #059669)' },
   'Total Withdrawal':  { icon: 'tabler:arrow-up-right', color: '0,194,255',   gradient: 'linear-gradient(135deg, #00C2FF, #0891B2)' },

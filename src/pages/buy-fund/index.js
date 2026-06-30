@@ -163,7 +163,7 @@ const BuyFund = () => {
                   Staking Bonus:
                 </Typography>
                 <Typography variant="span" sx={{ px: 2, color: "", fontWeight: 600 }}>
-                  12.0% Monthly
+                  15.0% Monthly
                 </Typography>
               </Typography>
               <Typography variant="h5" sx={{ textAlign: "center", mt: 1, mb: 1 }}>

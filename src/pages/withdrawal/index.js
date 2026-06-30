@@ -366,7 +366,7 @@ const Withdrawal = () => {
 
   // Network fee (in KGC) returned by the server — deducted from the partial
   // (other-reward) transfer leg so the UI shows the real net amount.
-  const networkFeeKgc = Number(data?.data?.networkFeeKgc || 0);
+  const networkFeeKgc = Number(data?.networkFeeKgc || 0);
 
   const socket = useContext(SocketContext);
   const { accError, chain } = useValidateAccount();
@@ -382,6 +382,13 @@ const Withdrawal = () => {
   const { tokenBlnc: totalStakedAmountInUSDC, isSuccess } = useGetUSDCTokens(data?.combinedTotalAmount);
   const { kgcTokens: withdrawalAmountInKgc }              = useGetKGCLiveTokens(withdrawalAmount);
   const { minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
+
+  const bwPriceInUsd = withdrawalAmountInKgc > 0 ? Number(withdrawalAmount) / Number(withdrawalAmountInKgc) : 0;
+  const networkFeeInUsd = networkFeeKgc * bwPriceInUsd;
+  const userReceivesBw = Number(withdrawalAmountInKgc) * 0.8;
+  const userReceivesUsd = Number(withdrawalAmount) * 0.8;
+  const actualReceiveBw = Math.max(0, userReceivesBw - networkFeeKgc);
+  const actualReceiveUsd = Math.max(0, userReceivesUsd - networkFeeInUsd);
 
   // ── Fetch social status on mount ──────────────────────────────────
   useEffect(() => {
@@ -442,6 +449,12 @@ const Withdrawal = () => {
       setLoader(true);
       const response = await dispatch(fundsWithdrawal({ userId, amount: Number(withdrawalAmountInKgc) }));
       if (response?.meta?.requestStatus === "fulfilled") {
+        if (response?.payload?.success === false) {
+          toast.error(response?.payload?.message || "Something went wrong please try again later", { duration: 3000 });
+          setLoader(false);
+          return;
+        }
+
         const withdrawalAmountFromContract = response?.payload?.data?.withdrawalAmountFromContract;
         if (withdrawalAmountFromContract) {
           const amount = withdrawalAmountFromContract > data?.stakingAmount
@@ -453,6 +466,12 @@ const Withdrawal = () => {
             args: [Number(ethers.utils.parseEther(`${truncateDecimals(amount, 7)}`))],
             from: address,
           });
+        } else {
+          // If no contract withdrawal is required (e.g. partial withdrawal processed entirely on server)
+          toast.success(response?.payload?.message || "Tokens Withdrawal Successfully done!", { duration: 3000 });
+          setWithdrawalAmount("");
+          setLoader(false);
+          dispatch(fundsWithdrawalAmount(userId));
         }
         return;
       }
@@ -587,14 +606,14 @@ const Withdrawal = () => {
                       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
                         <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>User Receives (80%)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#25D366" }}>
-                          ${(Number(withdrawalAmount) * 0.8).toFixed(2)}
+                          ${userReceivesUsd.toFixed(2)} ({userReceivesBw.toFixed(4)} BW)
                         </Typography>
                       </Box>
                       {networkFeeKgc > 0 && (
                         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
                           <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Network Fee (gas)</Typography>
                           <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF9F43" }}>
-                            −{networkFeeKgc.toFixed(4)} BW
+                            −{networkFeeKgc.toFixed(4)} BW (${networkFeeInUsd.toFixed(2)})
                           </Typography>
                         </Box>
                       )}
@@ -602,7 +621,7 @@ const Withdrawal = () => {
                         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
                           <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.8)", fontWeight: 600 }}>You Actually Receive</Typography>
                           <Typography variant="body2" sx={{ fontWeight: 700, color: "#25D366" }}>
-                            ${Math.max(0, Number(withdrawalAmount) * 0.8 - networkFeeKgc).toFixed(4)}
+                            ${actualReceiveUsd.toFixed(2)} ({actualReceiveBw.toFixed(4)} BW)
                           </Typography>
                         </Box>
                       )}

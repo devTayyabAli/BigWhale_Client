@@ -50,7 +50,12 @@ export const getReferralStats = createAsyncThunk(
 const levelBonusSlice = createSlice({
   name: "levelBonus",
   initialState,
-  reducers: {},
+  reducers: {
+    resetLevelBonusStatus: (state) => {
+      state.referralStatsStatus = "idle";
+      state.levelBonusStatus = "idle";
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getLevelBonus.pending, (state) => {
@@ -77,5 +82,7 @@ const levelBonusSlice = createSlice({
       });
   },
 });
+
+export const { resetLevelBonusStatus } = levelBonusSlice.actions;
 
 export default levelBonusSlice.reducer;

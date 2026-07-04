@@ -5,7 +5,9 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Skeleton from '@mui/material/Skeleton'
-import { useEffect, useMemo } from 'react'
+import Tooltip from '@mui/material/Tooltip'
+import CircularProgress from '@mui/material/CircularProgress'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useAccount } from 'wagmi'
 import { keyframes } from '@emotion/react'
@@ -21,8 +23,9 @@ import DownlineTeam from 'src/views/dashboards/analytics/DownlineTeam'
 import CappingStatus from 'src/views/dashboards/analytics/CappingStatus'
 import UserProfileHeader from 'src/views/pages/user-profile/UserProfileHeader'
 
-import { getReferralStats } from 'src/store/apps/levelBonus/levelBonusSlice'
-import { getNewsBanner } from 'src/store/apps/support/supportTicketsSlice'
+import { getReferralStats, resetLevelBonusStatus } from 'src/store/apps/levelBonus/levelBonusSlice'
+import { getNewsBanner, resetBannerStatus } from 'src/store/apps/support/supportTicketsSlice'
+import { getCurrentUser } from 'src/store/apps/auth/currentUserSlice'
 import { capitalizeFirstLetter } from 'src/constants/common'
 import { ENV } from 'src/configs/env'
 import Icon from 'src/@core/components/icon'
@@ -134,6 +137,23 @@ const AnalyticsDashboard = () => {
 
   const bannerURL = getNewsBannerValue?.[0]?.picture?.[0]?.url
 
+  // ── Reload state ─────────────────────────────────────────────────
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    // Reset all status flags back to idle so guards allow re-fetch
+    dispatch(resetLevelBonusStatus())
+    dispatch(resetBannerStatus())
+    // Re-dispatch all dashboard APIs
+    await Promise.all([
+      dispatch(getReferralStats()),
+      dispatch(getNewsBanner()),
+      ...(currentUser?._id ? [dispatch(getCurrentUser(currentUser._id))] : []),
+    ])
+    setIsRefreshing(false)
+  }, [dispatch, currentUser?._id])
+
   useEffect(() => {
     // Only dispatch if not already loading or loaded
     if (referralStatus === 'idle') {
@@ -168,7 +188,55 @@ const AnalyticsDashboard = () => {
 
         {/* Profile Header */}
         <Grid item xs={12}>
-          <UserProfileHeader />
+          <Box sx={{ position: 'relative' }}>
+            <UserProfileHeader />
+            {/* ── Reload Button ─────────────────────────────────── */}
+            <Tooltip title='Refresh dashboard data' placement='left'>
+              <Box
+                component='button'
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                sx={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  zIndex: 10,
+                  width: 42,
+                  height: 42,
+                  borderRadius: '50%',
+                  background: 'rgba(13,18,36,0.9)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(0,229,255,0.3)',
+                  cursor: isRefreshing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  transition: 'all 0.3s ease',
+                  '&:hover:not(:disabled)': {
+                    background: 'rgba(0,229,255,0.12)',
+                    borderColor: '#00E5FF',
+                    boxShadow: '0 0 16px rgba(0,229,255,0.3)',
+                  },
+                  '&:disabled': {
+                    opacity: 0.6,
+                  },
+                }}
+              >
+                {isRefreshing ? (
+                  <CircularProgress size={18} sx={{ color: '#00E5FF' }} />
+                ) : (
+                  <Icon
+                    icon='tabler:refresh'
+                    style={{
+                      color: '#00E5FF',
+                      fontSize: '1.1rem',
+                    }}
+                  />
+                )}
+              </Box>
+            </Tooltip>
+          </Box>
         </Grid>
         {/* Wallet & Token */}
         <Grid item xs={12}>

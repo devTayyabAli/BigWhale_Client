@@ -109,6 +109,9 @@ const supportTicketSlice = createSlice({
       state.error = null;
       state.user = null;
     },
+    resetBannerStatus: (state) => {
+      state.bannerStatus = "idle";
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -209,5 +212,7 @@ const supportTicketSlice = createSlice({
       })
   },
 });
+
+export const { resetSupportState, resetBannerStatus } = supportTicketSlice.actions;
 
 export default supportTicketSlice.reducer;

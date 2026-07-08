@@ -210,18 +210,36 @@ const App = (props) => {
         setShowDescription(
           "Your capping limit has been reached to 100%. Please stake again to continue receiving rewards."
         );
+      } else {
+        // Progress dropped below 100% (e.g. after a re-stake) — dismiss the modal.
+        setShowPopup(false);
       }
     };
+
+    // When a new stake is confirmed, dismiss the capping popup and re-request
+    // fresh capping data so the modal doesn't stay open after re-staking.
+    const handleStakeConfirmed = () => {
+      setShowPopup(false);
+      if (socket && user?.data?._id) {
+        setTimeout(() => {
+          socket.emit("capping", user.data._id);
+        }, 1500);
+      }
+    };
+
     if (socket && user?.data?._id) {
       socket.emit("capping", user.data._id);
       socket.on("cappingAmount", handleCappingAmount); // Listen to cappingAmount event
+      socket.on("Stake", handleStakeConfirmed);        // Dismiss popup on re-stake
     }
     return () => {
       if (socket && user?.data?._id) {
         socket.off("cappingAmount", handleCappingAmount); // Remove the listener when component unmounts
+        socket.off("Stake", handleStakeConfirmed);
       }
     };
   }, [socket, user?.data?._id]);
+
 
   useEffect(() => {
     const handleRankUpdate = ({ title, description }) => {

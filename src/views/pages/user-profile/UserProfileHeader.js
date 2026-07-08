@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography'
 import CardContent from '@mui/material/CardContent'
 import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
+import Skeleton from '@mui/material/Skeleton'
 import axios from 'axios'
 import Icon from 'src/@core/components/icon'
 import { useDispatch, useSelector } from 'react-redux'
@@ -31,6 +32,8 @@ const UserProfileHeader = () => {
   const { kycInfo } = useSelector(state => state.kyc)
   const [referralStats, setReferralStats] = useState(null)
   const referralStatsData = useSelector(state => state?.levelBonus?.referralStats)
+  const referralStatsStatus = useSelector(state => state?.levelBonus?.referralStatsStatus)
+  const isStatsLoading = referralStatsStatus === 'loading'
 
   useEffect(() => {
     if (referralStatsData) setReferralStats(referralStatsData)
@@ -164,10 +167,14 @@ const UserProfileHeader = () => {
                 >
                   {capitalizeEachWord(currentUser?.name) || 'BIGWHALE User'}
                 </Typography>
-                {referralStats?.userRank > 0 && (
-                  <Typography sx={{ fontSize: '1rem' }}>
-                    {renderStars(referralStats?.userRank || 0, 7)}
-                  </Typography>
+                {isStatsLoading ? (
+                  <Skeleton variant='rectangular' width={80} height={16} sx={{ borderRadius: '4px', background: 'rgba(200,215,245,0.1)' }} />
+                ) : (
+                  referralStats?.userRank > 0 && (
+                    <Typography sx={{ fontSize: '1rem' }}>
+                      {renderStars(referralStats?.userRank || 0, 7)}
+                    </Typography>
+                  )
                 )}
                 {/* Status chip */}
                 <Box
@@ -191,8 +198,8 @@ const UserProfileHeader = () => {
               {/* Team stats */}
               <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
                 {[
-                  { label: 'Direct Team', value: referralStats?.directReferral || 0, icon: 'tabler:users', color: '#00E5FF' },
-                  { label: 'Downline', value: referralStats?.downlineReferral || 0, icon: 'tabler:hierarchy', color: '#A855F7' },
+                  { label: 'Direct Team', value: referralStats?.directReferral ?? 0, icon: 'tabler:users', color: '#00E5FF' },
+                  { label: 'Downline', value: referralStats?.downlineReferral ?? 0, icon: 'tabler:hierarchy', color: '#A855F7' },
                   { label: 'User ID', value: currentUser?.userName || '—', icon: 'tabler:id', color: '#FF2E9F' },
                 ].map((stat, i) => (
                   <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
@@ -200,9 +207,13 @@ const UserProfileHeader = () => {
                     <Typography sx={{ color: 'rgba(200,215,245,0.5)', fontSize: '0.8rem', fontFamily: '"Space Grotesk", sans-serif' }}>
                       {stat.label}:
                     </Typography>
-                    <Typography sx={{ color: stat.color, fontSize: '0.85rem', fontWeight: 700, fontFamily: '"Space Grotesk", sans-serif' }}>
-                      {stat.value}
-                    </Typography>
+                    {isStatsLoading && stat.label !== 'User ID' ? (
+                      <Skeleton variant='text' width={20} sx={{ background: 'rgba(200,215,245,0.1)' }} />
+                    ) : (
+                      <Typography sx={{ color: stat.color, fontSize: '0.85rem', fontWeight: 700, fontFamily: '"Space Grotesk", sans-serif' }}>
+                        {stat.value}
+                      </Typography>
+                    )}
                   </Box>
                 ))}
               </Box>

@@ -115,7 +115,9 @@ const AvailableBalance = () => {
                 lineHeight: 1.2,
               }}
             >
-              ${availableBonusBalance}
+              ${availableBonusBalance !== undefined && availableBonusBalance !== null && !isNaN(Number(availableBonusBalance))
+                ? Number(Number(availableBonusBalance).toFixed(4)).toString()
+                : availableBonusBalance ?? '0'}
             </Typography>
           )}
           <Typography sx={{ color: 'rgba(200,215,245,0.4)', fontSize: '0.78rem', mt: 0.5 }}>

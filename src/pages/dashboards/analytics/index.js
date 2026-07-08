@@ -263,6 +263,7 @@ const AnalyticsDashboard = () => {
               title={reward.title}
               worth={reward.worth}
               status={reward.status}
+              loading={referralStatus === 'loading'}
             />
           </Grid>
         ))}

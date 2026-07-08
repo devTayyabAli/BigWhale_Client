@@ -189,14 +189,29 @@ export default function CappingStatusWrapper() {
       setProgress(pct)
     }
 
+    // When a new stake is confirmed on-chain, the server emits "Stake".
+    // Re-request fresh capping data so the progress bar reflects the new
+    // stake cycle instead of staying stuck at 100%.
+    const handleStakeConfirmed = () => {
+      if (socket && currentUser?._id) {
+        // Small delay so the server finishes activating the stake and
+        // updating the earnAmount window before we query.
+        setTimeout(() => {
+          socket.emit('capping', currentUser._id)
+        }, 1500)
+      }
+    }
+
     if (socket && currentUser?._id) {
       socket.emit('capping', currentUser._id)
       socket.on('cappingAmount', handleCappingAmount)
+      socket.on('Stake', handleStakeConfirmed)
     }
 
     return () => {
       if (socket && currentUser?._id) {
         socket.off('cappingAmount', handleCappingAmount)
+        socket.off('Stake', handleStakeConfirmed)
       }
     }
   }, [socket, currentUser?._id])

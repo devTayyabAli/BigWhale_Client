@@ -9,14 +9,14 @@ import Icon from 'src/@core/components/icon'
 
 // Map titles to icons and accent colors
 const CARD_META = {
-  'Account Status':    { icon: 'tabler:user-check',    color: '0,229,255',   gradient: 'linear-gradient(135deg, #00E5FF, #00C2FF)' },
-  'Staking Bonus':     { icon: 'tabler:lock',           color: '168,85,247',  gradient: 'linear-gradient(135deg, #A855F7, #9333EA)' },
-  'Level Bonus':       { icon: 'tabler:hierarchy',      color: '0,229,255',   gradient: 'linear-gradient(135deg, #00E5FF, #A855F7)' },
-  'Salary Bonus':      { icon: 'tabler:trophy',         color: '255,46,159',  gradient: 'linear-gradient(135deg, #FF2E9F, #CC0066)' },
-  'Instant Bonus':     { icon: 'tabler:bolt',           color: '245,158,11',  gradient: 'linear-gradient(135deg, #F59E0B, #D97706)' },
-  'Total Bonus':       { icon: 'tabler:chart-bar',      color: '16,185,129',  gradient: 'linear-gradient(135deg, #10B981, #059669)' },
-  'Total Withdrawal':  { icon: 'tabler:arrow-up-right', color: '0,194,255',   gradient: 'linear-gradient(135deg, #00C2FF, #0891B2)' },
-  'Available Balance': { icon: 'tabler:wallet',         color: '0,229,255',   gradient: 'linear-gradient(135deg, #00E5FF, #A855F7)' },
+  'Account Status': { icon: 'tabler:user-check', color: '0,229,255', gradient: 'linear-gradient(135deg, #00E5FF, #00C2FF)' },
+  'Staking Bonus': { icon: 'tabler:lock', color: '168,85,247', gradient: 'linear-gradient(135deg, #A855F7, #9333EA)' },
+  'Level Bonus': { icon: 'tabler:hierarchy', color: '0,229,255', gradient: 'linear-gradient(135deg, #00E5FF, #A855F7)' },
+  'Salary Bonus': { icon: 'tabler:trophy', color: '255,46,159', gradient: 'linear-gradient(135deg, #FF2E9F, #CC0066)' },
+  'Instant Bonus': { icon: 'tabler:bolt', color: '245,158,11', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)' },
+  'Total Bonus': { icon: 'tabler:chart-bar', color: '16,185,129', gradient: 'linear-gradient(135deg, #10B981, #059669)' },
+  'Total Withdrawal': { icon: 'tabler:arrow-up-right', color: '0,194,255', gradient: 'linear-gradient(135deg, #00C2FF, #0891B2)' },
+  'Available Balance': { icon: 'tabler:wallet', color: '0,229,255', gradient: 'linear-gradient(135deg, #00E5FF, #A855F7)' },
 }
 
 const getStatusColor = status => {
@@ -28,11 +28,12 @@ const getStatusColor = status => {
   return '#00E5FF'
 }
 
-const RewardCard = ({ title, status, worth }) => {
+const RewardCard = ({ title, status, worth, loading }) => {
   const { tokenBlnc: availableUSDC, isLoading, iserror } = useGetUSDCTokens(worth)
   const meta = CARD_META[title] || { icon: 'tabler:coin', color: '0,229,255', gradient: 'linear-gradient(135deg, #00E5FF, #A855F7)' }
   const isStatusCard = title === 'Account Status'
   const statusColor = getStatusColor(status)
+  const isCardLoading = loading || isLoading
 
   return (
     <Card
@@ -111,7 +112,7 @@ const RewardCard = ({ title, status, worth }) => {
               {status || 'N/A'}
             </Typography>
           </Box>
-        ) : isLoading ? (
+        ) : isCardLoading ? (
           <Box>
             <Skeleton variant='text' width='70%' height={36} sx={{ background: `rgba(${meta.color},0.08)`, borderRadius: '6px' }} />
             <Skeleton variant='text' width='40%' height={20} sx={{ background: `rgba(${meta.color},0.05)`, borderRadius: '4px', mt: 0.5 }} />
@@ -134,7 +135,9 @@ const RewardCard = ({ title, status, worth }) => {
                 lineHeight: 1.2,
               }}
             >
-              ${availableUSDC ?? '0'}
+              ${availableUSDC !== undefined && availableUSDC !== null && !isNaN(Number(availableUSDC))
+                ? Number(Number(availableUSDC).toFixed(4)).toString()
+                : availableUSDC ?? '0'}
             </Typography>
             <Typography sx={{ color: 'rgba(200,215,245,0.35)', fontSize: '0.7rem', mt: 0.5, fontFamily: '"Space Grotesk", sans-serif' }}>
               USDT equivalent

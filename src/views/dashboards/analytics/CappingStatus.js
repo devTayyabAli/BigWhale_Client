@@ -9,7 +9,7 @@ import SocketContext from 'src/context/Socket'
 import { useSelector } from 'react-redux'
 import Icon from 'src/@core/components/icon'
 
-const CappingStatusCard = ({ value, total, cappingFormula }) => {
+const CappingStatusCard = ({ value, total, cappingFormula, cappingPlanLabel }) => {
   const pct = Math.min(Math.round((value / total) * 100), 100)
   const remaining = 100 - pct
 
@@ -20,6 +20,10 @@ const CappingStatusCard = ({ value, total, cappingFormula }) => {
     return { main: '#00E5FF', glow: 'rgba(0,229,255,0.4)', bg: 'rgba(0,229,255,0.08)' }
   }
   const color = getColor()
+
+  // Display label: prefer server-sent label ("Investor 2X" / "Networker 3X"),
+  // fall back to raw formula number if label is not yet available.
+  const planDisplay = cappingPlanLabel || (cappingFormula ? `${cappingFormula}X` : null)
 
   return (
     <Card
@@ -80,7 +84,7 @@ const CappingStatusCard = ({ value, total, cappingFormula }) => {
                 fontFamily: '"Orbitron", sans-serif',
               }}
             >
-              {cappingFormula}X
+              {planDisplay}
             </Box>
           )}
         </Box>
@@ -179,42 +183,66 @@ export default function CappingStatusWrapper() {
   const socket = useContext(SocketContext)
   const [progress, setProgress] = useState(0)
   const [cappingFormula, setCappingFormula] = useState(null)
+  const [cappingPlanLabel, setCappingPlanLabel] = useState(null)
 
   useEffect(() => {
-    const handleCappingAmount = ({ cappingAmount, earnAmount, cappingFormula }) => {
+    if (!socket || !currentUser?._id) return
+
+    // ── Request fresh capping data from the server ─────────────────────
+    const requestCapping = () => {
+      socket.emit('capping', currentUser._id)
+    }
+
+    // ── Handle the response from the server ────────────────────────────
+    const handleCappingAmount = ({ cappingAmount, earnAmount, cappingFormula, cappingPlanLabel }) => {
       setCappingFormula(cappingFormula)
+      setCappingPlanLabel(cappingPlanLabel || (cappingFormula ? `${cappingFormula}X` : null))
       let pct = 0
       if (cappingAmount > 0) pct = (earnAmount / cappingAmount) * 100
       if (pct >= 100) pct = 100
       setProgress(pct)
     }
 
-    // When a new stake is confirmed on-chain, the server emits "Stake".
-    // Re-request fresh capping data so the progress bar reflects the new
-    // stake cycle instead of staying stuck at 100%.
+    // ── Trigger 1: component mount — initial load ──────────────────────
+    requestCapping()
+
+    // ── Trigger 2: new stake confirmed on-chain ────────────────────────
+    // Small delay so the server finishes activating the stake before we query.
     const handleStakeConfirmed = () => {
-      if (socket && currentUser?._id) {
-        // Small delay so the server finishes activating the stake and
-        // updating the earnAmount window before we query.
-        setTimeout(() => {
-          socket.emit('capping', currentUser._id)
-        }, 1500)
-      }
+      setTimeout(requestCapping, 1500)
     }
 
-    if (socket && currentUser?._id) {
-      socket.emit('capping', currentUser._id)
-      socket.on('cappingAmount', handleCappingAmount)
-      socket.on('Stake', handleStakeConfirmed)
+    // ── Trigger 3: server cron saved a new staking reward for this user ─
+    // Server emits "cappingUpdate" to the user's room after each reward save.
+    // This is the main trigger that keeps the progress bar in sync with
+    // the daily reward accumulation.
+    const handleCappingUpdate = () => {
+      requestCapping()
     }
+
+    // ── Trigger 4: withdrawal completed — earnAmount resets ────────────
+    const handleWithdrawal = () => {
+      // Brief delay so the server finishes processing the withdrawal
+      setTimeout(requestCapping, 1000)
+    }
+
+    // ── Trigger 5: periodic poll every 5 minutes ──────────────────────
+    // Safety net for cases where a socket event is missed (reconnect, etc.)
+    const pollInterval = setInterval(requestCapping, 5 * 60 * 1000)
+
+    socket.on('cappingAmount', handleCappingAmount)
+    socket.on('Stake', handleStakeConfirmed)
+    socket.on('cappingUpdate', handleCappingUpdate)
+    socket.on('Withdraw', handleWithdrawal)
 
     return () => {
-      if (socket && currentUser?._id) {
-        socket.off('cappingAmount', handleCappingAmount)
-        socket.off('Stake', handleStakeConfirmed)
-      }
+      clearInterval(pollInterval)
+      socket.off('cappingAmount', handleCappingAmount)
+      socket.off('Stake', handleStakeConfirmed)
+      socket.off('cappingUpdate', handleCappingUpdate)
+      socket.off('Withdraw', handleWithdrawal)
     }
   }, [socket, currentUser?._id])
 
-  return <CappingStatusCard value={progress} total={100} cappingFormula={cappingFormula} />
+  return <CappingStatusCard value={progress} total={100} cappingFormula={cappingFormula} cappingPlanLabel={cappingPlanLabel} />
 }

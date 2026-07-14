@@ -368,6 +368,10 @@ const Withdrawal = () => {
   // (other-reward) transfer leg so the UI shows the real net amount.
   const networkFeeKgc = Number(data?.networkFeeKgc || 0);
 
+  // Platform withdrawal deduction percentage (e.g. 5 = 5%).
+  // Used as fallback only if the on-chain gas estimate is unavailable.
+  const deductionPct = Number(data?.withdrawalDeductionPercentage || 0);
+
   const socket = useContext(SocketContext);
   const { accError, chain } = useValidateAccount();
   const { switchNetwork }   = useSwitchNetwork({ onSuccess() { withdrawAmount(); } });
@@ -383,11 +387,16 @@ const Withdrawal = () => {
   const { kgcTokens: withdrawalAmountInKgc }              = useGetKGCLiveTokens(withdrawalAmount);
   const { minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
 
+  // Use live gas fee if available, otherwise fall back to the fixed deduction %.
+  const feeKgc = networkFeeKgc > 0
+    ? networkFeeKgc
+    : (deductionPct > 0 ? Number(withdrawalAmountInKgc) * 0.8 * (deductionPct / 100) : 0);
+
   const bwPriceInUsd = withdrawalAmountInKgc > 0 ? Number(withdrawalAmount) / Number(withdrawalAmountInKgc) : 0;
-  const networkFeeInUsd = networkFeeKgc * bwPriceInUsd;
+  const networkFeeInUsd = feeKgc * bwPriceInUsd;
   const userReceivesBw = Number(withdrawalAmountInKgc) * 0.8;
   const userReceivesUsd = Number(withdrawalAmount) * 0.8;
-  const actualReceiveBw = Math.max(0, userReceivesBw - networkFeeKgc);
+  const actualReceiveBw = Math.max(0, userReceivesBw - feeKgc);
   const actualReceiveUsd = Math.max(0, userReceivesUsd - networkFeeInUsd);
 
   // ── Fetch social status on mount ──────────────────────────────────
@@ -609,28 +618,20 @@ const Withdrawal = () => {
                           ${userReceivesUsd.toFixed(2)} ({userReceivesBw.toFixed(4)} BW)
                         </Typography>
                       </Box>
-                      {networkFeeKgc > 0 && (
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                          <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Network Fee (gas)</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF9F43" }}>
-                            −{networkFeeKgc.toFixed(4)} BW (${networkFeeInUsd.toFixed(2)})
-                          </Typography>
-                        </Box>
-                      )}
-                      {networkFeeKgc > 0 && (
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                          <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.8)", fontWeight: 600 }}>You Actually Receive</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: "#25D366" }}>
-                            ${actualReceiveUsd.toFixed(2)} ({actualReceiveBw.toFixed(4)} BW)
-                          </Typography>
-                        </Box>
-                      )}
-                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
                         <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Salary Rank (20%)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF2E9F" }}>
                           ${(Number(withdrawalAmount) * 0.2).toFixed(2)}
                         </Typography>
                       </Box>
+                      {feeKgc > 0 && (
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Fee</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF9F43" }}>
+                            ${networkFeeInUsd.toFixed(2)} ({feeKgc.toFixed(4)} BW)
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </Grid>
                 )}

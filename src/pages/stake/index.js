@@ -550,7 +550,7 @@ const Stake = () => {
                   variant="span"
                   sx={{ px: 2, color: "#C9A84C", fontWeight: 600 }}
                 >
-                  <AnimatedCounter from={0} to={15} />
+                  <AnimatedCounter from={0} to={12} />
                 </Typography>
               </Typography>
               <Typography
@@ -564,7 +564,7 @@ const Stake = () => {
                   variant="span"
                   sx={{ px: 2, color: "#7367f0", fontWeight: 600 }}
                 >
-                  0.50%
+                  0.40%
                 </Typography>
               </Typography>
             </Box>

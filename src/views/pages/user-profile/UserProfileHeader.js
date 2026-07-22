@@ -23,7 +23,7 @@ const shimmer = keyframes`
   100% { background-position:  200% center; }
 `
 
-const UserProfileHeader = () => {
+const UserProfileHeader = ({ onRefresh, isRefreshing }) => {
   const router = useRouter()
   const [data, setData] = useState(null)
   const currentUser = useSelector(state => state?.getCurrentUser?.user?.data)
@@ -93,89 +93,134 @@ const UserProfileHeader = () => {
         },
       }}
     >
-      {/* Subtle background shimmer */}
+      {/* Background glow overlay */}
       <Box
         sx={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(0,229,255,0.02) 0%, transparent 50%, rgba(168,85,247,0.02) 100%)',
+          background: 'linear-gradient(135deg, rgba(0,229,255,0.03) 0%, transparent 50%, rgba(168,85,247,0.03) 100%)',
           pointerEvents: 'none',
         }}
       />
 
-      <CardContent sx={{ pt: 4, pb: '20px !important', position: 'relative', zIndex: 1 }}>
+      {/* Refresh button in card header */}
+      {onRefresh && (
+        <Box
+          component='button'
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          title='Refresh dashboard data'
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 10,
+            width: 38,
+            height: 38,
+            borderRadius: '50%',
+            background: 'rgba(13,18,36,0.9)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(0,229,255,0.3)',
+            cursor: isRefreshing ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            transition: 'all 0.3s ease',
+            '&:hover:not(:disabled)': {
+              background: 'rgba(0,229,255,0.15)',
+              borderColor: '#00E5FF',
+              boxShadow: '0 0 16px rgba(0,229,255,0.3)',
+            },
+            '&:disabled': {
+              opacity: 0.6,
+            },
+          }}
+        >
+          {isRefreshing ? (
+            <Skeleton variant='circular' width={16} height={16} sx={{ background: '#00E5FF' }} />
+          ) : (
+            <Icon icon='tabler:refresh' style={{ color: '#00E5FF', fontSize: '1.05rem' }} />
+          )}
+        </Box>
+      )}
+
+      <CardContent sx={{ p: { xs: 3, sm: 4 }, pr: onRefresh ? { xs: 7, sm: 8 } : { xs: 3, sm: 4 }, position: 'relative', zIndex: 1 }}>
         <Box
           sx={{
             display: 'flex',
-            alignItems: { xs: 'center', md: 'flex-end' },
-            flexWrap: { xs: 'wrap', md: 'nowrap' },
-            justifyContent: { xs: 'center', md: 'flex-start' },
-            gap: 3,
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'center', md: 'center' },
+            justifyContent: 'space-between',
+            gap: { xs: 3, md: 3 },
           }}
         >
-          {/* Avatar */}
-          <Box sx={{ position: 'relative', flexShrink: 0 }}>
-            <Avatar
-              src={currentUser?.profilePicture}
-              alt={currentUser?.name}
-              sx={{
-                width: 90, height: 90,
-                borderRadius: '18px',
-                border: '3px solid rgba(0,229,255,0.3)',
-                background: 'linear-gradient(135deg, rgba(0,229,255,0.2), rgba(168,85,247,0.2))',
-                color: '#00E5FF',
-                fontFamily: '"Orbitron", sans-serif',
-                fontWeight: 800,
-                fontSize: '1.8rem',
-                boxShadow: '0 0 20px rgba(0,229,255,0.2)',
-              }}
-            >
-              {!currentUser?.profilePicture && currentUser?.name?.charAt(0)?.toUpperCase()}
-            </Avatar>
-            {/* Online dot */}
-            <Box
-              sx={{
-                position: 'absolute', bottom: 4, right: 4,
-                width: 14, height: 14, borderRadius: '50%',
-                background: '#10B981',
-                border: '2px solid rgba(13,18,36,0.9)',
-                boxShadow: '0 0 6px rgba(16,185,129,0.6)',
-              }}
-            />
-          </Box>
-
-          {/* Info */}
+          {/* Left: Avatar & Basic User Info */}
           <Box
             sx={{
-              flex: 1,
               display: 'flex',
-              alignItems: { xs: 'center', md: 'flex-end' },
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', md: 'space-between' },
-              gap: 2,
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: 'center',
+              gap: 2.5,
+              flex: 1,
+              width: { xs: '100%', md: 'auto' },
             }}
           >
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' }, gap: 1 }}>
-              {/* Name + stars */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+            {/* Avatar */}
+            <Box sx={{ position: 'relative', flexShrink: 0 }}>
+              <Avatar
+                src={currentUser?.profilePicture}
+                alt={currentUser?.name}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '18px',
+                  border: '2px solid rgba(0,229,255,0.35)',
+                  background: 'linear-gradient(135deg, rgba(0,229,255,0.2), rgba(168,85,247,0.2))',
+                  color: '#00E5FF',
+                  fontFamily: '"Orbitron", sans-serif',
+                  fontWeight: 800,
+                  fontSize: '1.6rem',
+                  boxShadow: '0 0 20px rgba(0,229,255,0.15)',
+                }}
+              >
+                {!currentUser?.profilePicture && currentUser?.name?.charAt(0)?.toUpperCase()}
+              </Avatar>
+              {/* Status Indicator Dot */}
+              <Box
+                sx={{
+                  position: 'absolute', bottom: 2, right: 2,
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: '#10B981',
+                  border: '2px solid rgba(13,18,36,0.95)',
+                  boxShadow: '0 0 8px rgba(16,185,129,0.7)',
+                }}
+              />
+            </Box>
+
+            {/* Info details */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: { xs: 'center', sm: 'flex-start' },
+                gap: 1.5,
+                flex: 1,
+              }}
+            >
+              {/* Row 1: Name + Status chip + Stars */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
                 <Typography
                   sx={{
                     fontFamily: '"Space Grotesk", sans-serif',
                     fontWeight: 700,
                     fontSize: '1.3rem',
                     color: '#F8FAFC',
+                    letterSpacing: '0.01em',
                   }}
                 >
                   {capitalizeEachWord(currentUser?.name) || 'BIGWHALE User'}
                 </Typography>
-                {isStatsLoading ? (
-                  <Skeleton variant='rectangular' width={80} height={16} sx={{ borderRadius: '4px', background: 'rgba(200,215,245,0.1)' }} />
-                ) : (
-                  referralStats?.userRank > 0 && (
-                    <Typography sx={{ fontSize: '1rem' }}>
-                      {renderStars(referralStats?.userRank || 0, 7)}
-                    </Typography>
-                  )
-                )}
+
                 {/* Status chip */}
                 <Box
                   sx={{
@@ -189,28 +234,61 @@ const UserProfileHeader = () => {
                     fontFamily: '"Space Grotesk", sans-serif',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
+                    display: 'inline-flex',
+                    alignItems: 'center',
                   }}
                 >
                   {currentUser?.status || 'Active'}
                 </Box>
+
+                {isStatsLoading ? (
+                  <Skeleton variant='rectangular' width={60} height={16} sx={{ borderRadius: '4px', background: 'rgba(200,215,245,0.1)' }} />
+                ) : (
+                  referralStats?.userRank > 0 && (
+                    <Typography sx={{ fontSize: '0.95rem' }}>
+                      {renderStars(referralStats?.userRank || 0, 7)}
+                    </Typography>
+                  )
+                )}
               </Box>
 
-              {/* Team stats */}
-              <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              {/* Row 2: Team Stats (Structured Info Chips) */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.2,
+                  flexWrap: 'wrap',
+                  justifyContent: { xs: 'center', sm: 'flex-start' },
+                }}
+              >
                 {[
                   { label: 'Direct Team', value: referralStats?.directReferral ?? 0, icon: 'tabler:users', color: '#00E5FF' },
                   { label: 'Downline', value: referralStats?.downlineReferral ?? 0, icon: 'tabler:hierarchy', color: '#A855F7' },
                   { label: 'User ID', value: currentUser?.userName || '—', icon: 'tabler:id', color: '#FF2E9F' },
                 ].map((stat, i) => (
-                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                  <Box
+                    key={i}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      px: 1.5,
+                      py: 0.6,
+                      borderRadius: '10px',
+                      background: 'rgba(200,215,245,0.04)',
+                      border: '1px solid rgba(200,215,245,0.08)',
+                      backdropFilter: 'blur(8px)',
+                    }}
+                  >
                     <Icon icon={stat.icon} style={{ color: stat.color, fontSize: '0.9rem' }} />
-                    <Typography sx={{ color: 'rgba(200,215,245,0.5)', fontSize: '0.8rem', fontFamily: '"Space Grotesk", sans-serif' }}>
+                    <Typography sx={{ color: 'rgba(200,215,245,0.55)', fontSize: '0.78rem', fontWeight: 500, fontFamily: '"Space Grotesk", sans-serif' }}>
                       {stat.label}:
                     </Typography>
                     {isStatsLoading && stat.label !== 'User ID' ? (
-                      <Skeleton variant='text' width={20} sx={{ background: 'rgba(200,215,245,0.1)' }} />
+                      <Skeleton variant='text' width={18} sx={{ background: 'rgba(200,215,245,0.1)' }} />
                     ) : (
-                      <Typography sx={{ color: stat.color, fontSize: '0.85rem', fontWeight: 700, fontFamily: '"Space Grotesk", sans-serif' }}>
+                      <Typography sx={{ color: stat.color, fontSize: '0.82rem', fontWeight: 700, fontFamily: '"Space Grotesk", sans-serif' }}>
                         {stat.value}
                       </Typography>
                     )}
@@ -218,68 +296,80 @@ const UserProfileHeader = () => {
                 ))}
               </Box>
             </Box>
+          </Box>
 
-            {/* Action buttons */}
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-end' } }}>
-              <Button
-                variant='outlined'
-                startIcon={<Icon icon='tabler:edit' fontSize='1rem' />}
-                onClick={() => router.push('/pages/account-settings/account/')}
-                sx={{
-                  borderColor: 'rgba(0,229,255,0.35)',
-                  color: '#00E5FF',
-                  fontFamily: '"Space Grotesk", sans-serif',
-                  fontWeight: 600,
-                  fontSize: '0.82rem',
-                  borderRadius: '10px',
-                  py: 1,
-                  px: 2,
-                  '&:hover': {
-                    borderColor: '#00E5FF',
-                    background: 'rgba(0,229,255,0.08)',
-                    boxShadow: '0 0 12px rgba(0,229,255,0.2)',
-                  },
-                }}
-              >
-                Edit Profile
-              </Button>
-              <Button
-                variant='outlined'
-                id='blockpass-kyc-connect'
-                startIcon={<Icon icon='tabler:shield-check' fontSize='1rem' />}
-                disabled={!currentUser?._id}
-                onClick={() => {
-                  if (kycInfo?.status && !ReconnectKycStatus.includes(currentUser?.kycStatus)) {
-                    router.push('/kyc-details')
-                  }
-                }}
-                sx={{
-                  borderColor: 'rgba(168,85,247,0.35)',
-                  color: '#A855F7',
-                  fontFamily: '"Space Grotesk", sans-serif',
-                  fontWeight: 600,
-                  fontSize: '0.82rem',
-                  borderRadius: '10px',
-                  py: 1,
-                  px: 2,
-                  '&:hover': {
-                    borderColor: '#A855F7',
-                    background: 'rgba(168,85,247,0.08)',
-                    boxShadow: '0 0 12px rgba(168,85,247,0.2)',
-                  },
-                  '&.Mui-disabled': {
-                    borderColor: 'rgba(168,85,247,0.15)',
-                    color: 'rgba(168,85,247,0.35)',
-                  },
-                }}
-              >
-                {ReconnectKycStatus.includes(currentUser?.kycStatus)
-                  ? 'Re-Connect KYC'
-                  : kycInfo?.status
-                  ? 'KYC: ' + kycStatus[kycInfo?.status]
-                  : 'Connect KYC'}
-              </Button>
-            </Box>
+          {/* Right: Action Buttons */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', md: 'flex-end' },
+              width: { xs: '100%', md: 'auto' },
+              mt: { xs: 1, md: 0 },
+            }}
+          >
+            <Button
+              variant='outlined'
+              startIcon={<Icon icon='tabler:edit' fontSize='1rem' />}
+              onClick={() => router.push('/pages/account-settings/account/')}
+              sx={{
+                borderColor: 'rgba(0,229,255,0.35)',
+                color: '#00E5FF',
+                fontFamily: '"Space Grotesk", sans-serif',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                borderRadius: '10px',
+                py: 1,
+                px: 2.2,
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  borderColor: '#00E5FF',
+                  background: 'rgba(0,229,255,0.08)',
+                  boxShadow: '0 0 12px rgba(0,229,255,0.2)',
+                },
+              }}
+            >
+              Edit Profile
+            </Button>
+            <Button
+              variant='outlined'
+              id='blockpass-kyc-connect'
+              startIcon={<Icon icon='tabler:shield-check' fontSize='1rem' />}
+              disabled={!currentUser?._id}
+              onClick={() => {
+                if (kycInfo?.status && !ReconnectKycStatus.includes(currentUser?.kycStatus)) {
+                  router.push('/kyc-details')
+                }
+              }}
+              sx={{
+                borderColor: 'rgba(168,85,247,0.35)',
+                color: '#A855F7',
+                fontFamily: '"Space Grotesk", sans-serif',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                borderRadius: '10px',
+                py: 1,
+                px: 2.2,
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  borderColor: '#A855F7',
+                  background: 'rgba(168,85,247,0.08)',
+                  boxShadow: '0 0 12px rgba(168,85,247,0.2)',
+                },
+                '&.Mui-disabled': {
+                  borderColor: 'rgba(168,85,247,0.15)',
+                  color: 'rgba(168,85,247,0.35)',
+                },
+              }}
+            >
+              {ReconnectKycStatus.includes(currentUser?.kycStatus)
+                ? 'Re-Connect KYC'
+                : kycInfo?.status
+                ? 'KYC: ' + kycStatus[kycInfo?.status]
+                : 'Connect KYC'}
+            </Button>
           </Box>
         </Box>
       </CardContent>

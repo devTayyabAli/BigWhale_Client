@@ -128,7 +128,7 @@ const StakeHistory = () => {
   return (
     <Card>
       <CardHeader
-        title={`TOTAL STAKING : $${userStakeHistory?.totalStakeAmount || 0}`}
+        title={`TOTAL STAKING : $${userStakeHistory?.totalStakeAmount ? formatNumber(userStakeHistory?.totalStakeAmount, toFixedDecimal) : 0}`}
         titleTypographyProps={{ sx: { mb: [2, 0] } }}
         sx={{
           py: 4,

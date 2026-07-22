@@ -32,6 +32,7 @@ const StatRow = ({ label, value, icon, color = '#00E5FF', loading }) => (
           width: 36, height: 36, borderRadius: '8px',
           background: `rgba(${color === '#00E5FF' ? '0,229,255' : '168,85,247'},0.1)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
         }}
       >
         <Icon icon={icon} style={{ color, fontSize: '1.1rem' }} />
@@ -49,6 +50,10 @@ const StatRow = ({ label, value, icon, color = '#00E5FF', loading }) => (
           fontWeight: 700,
           fontSize: '1.1rem',
           color,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          ml: 2,
         }}
       >
         {value}
@@ -112,7 +117,7 @@ const AvailableStake = () => {
         {/* Stats */}
         <StatRow
           label='Total Stake (BW)'
-          value={user?.totalStakeAmount ?? 0}
+          value={user?.totalStakeAmount !== undefined && user?.totalStakeAmount !== null ? formatNumber(user?.totalStakeAmount, toFixedDecimal) : 0}
           icon='tabler:lock'
           color='#00E5FF'
           loading={user?.totalStakeAmount === undefined}

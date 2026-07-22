@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { useContractRegister } from "src/hooks/useContractRegister";
 import { useAccount } from "wagmi";
 import { useDispatch, useSelector } from "react-redux";
-import { stakeKGC } from "src/store/apps/stake/stakeSlice";
+import { stakeKGC, getStakeKGCHistory } from "src/store/apps/stake/stakeSlice";
 import { completeStakekGC } from "src/store/apps/stake/completeStakeSlice";
 import { completeStack } from "src/store/apps/transaction/completeTransactionEvents";
 import { createTxLog } from "src/store/apps/transaction/transactionLogsSlice";
@@ -59,12 +59,13 @@ import { formatNumber, toFixedDecimal } from "src/constants/common";
 import useReadSakeLimitInUSDC from "src/hooks/useReadSakeLimitInUSDC";
 import useGetCurrentPrice from "src/hooks/useGetCurrentPrice";
 import { usePendingTx } from "src/hooks/usePendingTx";
+
 const Stake = () => {
   const { address } = useAccount();
   const dispatch = useDispatch();
   const user = useSelector((state) => state?.login?.user);
   const { accError, chainError, chain } = useValidateAccount();
-  const { stake } = useSelector((state) => state.stake);
+  const { stake, stakeHistory } = useSelector((state) => state.stake);
 
   const [userId, setUserId] = useState(null);
   const [stakeAmount, setStakeAmount] = useState(null);
@@ -72,6 +73,8 @@ const Stake = () => {
   const [kgcAmount, setKGCAmount] = useState(0);
   const [minMaxError, setMinMaxError] = useState(null);
   const [error, setError] = useState(null);
+  const [previousStakeBW, setPreviousStakeBW] = useState(null);
+  const [restakeError, setRestakeError] = useState(null);
 
   // Persist pending tx across MetaMask mobile page reloads
   const { savePendingTx, clearPendingTx } = usePendingTx('stake');
@@ -153,6 +156,41 @@ const Stake = () => {
   const { kgcTokens: stakeAmountInKGC } = useGetKGCLiveTokens(stakeAmount);
   const { stakeLimitInUSDC, refetchMinUSDC, refetchMaxUSDC } =
     useReadSakeLimitInUSDC(stakeLimit.min, stakeLimit.max);
+
+  // ── Fetch user stake history to check for previous stake ───────────────
+  useEffect(() => {
+    if (userId) {
+      dispatch(getStakeKGCHistory({ userId, page: 1, limit: 1 }));
+    }
+  }, [userId, dispatch]);
+
+  useEffect(() => {
+    if (stakeHistory?.data?.stakes?.length > 0) {
+      const lastStake = stakeHistory.data.stakes[0];
+      if (lastStake?.amount && Number(lastStake.amount) > 0) {
+        setPreviousStakeBW(Number(lastStake.amount));
+      }
+    }
+  }, [stakeHistory]);
+
+  const minRequiredBW = previousStakeBW ? previousStakeBW + 50 : 0;
+
+  // ── Restake validation check (+50 BW over previous stake) ─────────────
+  useEffect(() => {
+    if (previousStakeBW && previousStakeBW > 0 && stakeAmount && stakeAmountInKGC) {
+      const currentKgcBW = roundKgcAmount(Number(stakeAmountInKGC || 0));
+      if (currentKgcBW < minRequiredBW) {
+        setRestakeError(
+          `Restake requirement: Amount must be at least ${minRequiredBW} BW tokens (previous stake: ${previousStakeBW} BW + 50 BW requirement)`
+        );
+      } else {
+        setRestakeError(null);
+      }
+    } else {
+      setRestakeError(null);
+    }
+  }, [previousStakeBW, minRequiredBW, stakeAmount, stakeAmountInKGC]);
+
   const handleSubmit = async () => {
     if (chain?.id !== ENV.chainId) {
       return switchNetwork?.(ENV.chainId);
@@ -161,6 +199,16 @@ const Stake = () => {
       return toast.error("Insufficient Funds", {
         duration: 5000,
       });
+    }
+
+    if (previousStakeBW && previousStakeBW > 0) {
+      const currentKgcBW = roundKgcAmount(Number(stakeAmountInKGC || 0));
+      if (currentKgcBW < minRequiredBW) {
+        return toast.error(
+          `Restake requirement: Amount must be at least ${minRequiredBW} BW tokens (previous stake: ${previousStakeBW} BW + 50 BW requirement)`,
+          { duration: 5000 }
+        );
+      }
     }
 
     addStake();
@@ -351,8 +399,36 @@ const Stake = () => {
                     {minMaxError}
                   </Typography>
                 )}
+                {restakeError && !error && !minMaxError && (
+                  <Typography
+                    variant="body2"
+                    style={{ color: "#FF2E9F" }}
+                    sx={{ fontWeight: 600, mt: 1 }}
+                  >
+                    {restakeError}
+                  </Typography>
+                )}
               </Grid>
             </Grid>
+
+            {previousStakeBW > 0 && (
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2.5,
+                  borderRadius: "12px",
+                  background: "rgba(0,229,255,0.06)",
+                  border: "1px solid rgba(0,229,255,0.2)",
+                }}
+              >
+                <Typography variant="body2" sx={{ color: "#00E5FF", fontWeight: 700 }}>
+                  Restake Requirement Active
+                </Typography>
+                <Typography variant="caption" sx={{ color: "rgba(200,215,245,0.75)", display: "block", mt: 0.5, fontSize: "0.82rem" }}>
+                  Previous stake: <strong>{previousStakeBW} BW</strong>. You must restake at least <strong>{minRequiredBW} BW</strong> (+50 BW rule).
+                </Typography>
+              </Box>
+            )}
 
             <Grid container spacing={5} mt={2}>
               <Grid item xs={12}>
@@ -582,7 +658,8 @@ const Stake = () => {
                   !stakeAmount ||
                   error ||
                   accError ||
-                  minMaxError
+                  minMaxError ||
+                  restakeError
                 )
                   ? {
                     scale: [1, 1.02, 1],
@@ -609,7 +686,8 @@ const Stake = () => {
                   !stakeAmount ||
                   error ||
                   accError ||
-                  minMaxError
+                  minMaxError ||
+                  Boolean(restakeError)
                 }
                 onClick={handleSubmit}
               >

@@ -188,55 +188,7 @@ const AnalyticsDashboard = () => {
 
         {/* Profile Header */}
         <Grid item xs={12}>
-          <Box sx={{ position: 'relative' }}>
-            <UserProfileHeader />
-            {/* ── Reload Button ─────────────────────────────────── */}
-            <Tooltip title='Refresh dashboard data' placement='left'>
-              <Box
-                component='button'
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                sx={{
-                  position: 'absolute',
-                  top: 16,
-                  right: 16,
-                  zIndex: 10,
-                  width: 42,
-                  height: 42,
-                  borderRadius: '50%',
-                  background: 'rgba(13,18,36,0.9)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(0,229,255,0.3)',
-                  cursor: isRefreshing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 0,
-                  transition: 'all 0.3s ease',
-                  '&:hover:not(:disabled)': {
-                    background: 'rgba(0,229,255,0.12)',
-                    borderColor: '#00E5FF',
-                    boxShadow: '0 0 16px rgba(0,229,255,0.3)',
-                  },
-                  '&:disabled': {
-                    opacity: 0.6,
-                  },
-                }}
-              >
-                {isRefreshing ? (
-                  <CircularProgress size={18} sx={{ color: '#00E5FF' }} />
-                ) : (
-                  <Icon
-                    icon='tabler:refresh'
-                    style={{
-                      color: '#00E5FF',
-                      fontSize: '1.1rem',
-                    }}
-                  />
-                )}
-              </Box>
-            </Tooltip>
-          </Box>
+          <UserProfileHeader onRefresh={handleRefresh} isRefreshing={isRefreshing} />
         </Grid>
         {/* Wallet & Token */}
         <Grid item xs={12}>

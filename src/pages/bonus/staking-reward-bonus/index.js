@@ -78,7 +78,7 @@ const StakingRewardBonus = () => {
         item?.createdAt &&
         new Date(item?.createdAt)?.toLocaleDateString(),
         package: oneUSDC && item?.stakeAmount ? `${kgcToUSDC(item?.stakeAmount, oneUSDC)}` : 0,
-        percent: item?.percent || 'N/A',
+        percent: item?.percent ?? '—',
         totalbonus: oneUSDC && item?.totalRewardAmount ? `${kgcToUSDC(item?.totalRewardAmount, oneUSDC)}` : 0,
       }))
     : [];

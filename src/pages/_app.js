@@ -200,11 +200,13 @@ const App = (props) => {
 
   useEffect(() => {
     const handleCappingAmount = ({ cappingAmount, earnAmount }) => {
+      const earn = Number(earnAmount || 0);
+      const cap = Number(cappingAmount || 0);
       let percentage = 0;
-      if (cappingAmount) {
-        percentage = (earnAmount / cappingAmount) * 100;
+      if (cap > 0) {
+        percentage = (earn / cap) * 100;
       }
-      if (percentage >= 100) {
+      if (percentage >= 100 || (cap > 0 && earn >= cap)) {
         setShowPopup(true);
         setShowTitle("Capping Limit Reached!");
         setShowDescription(

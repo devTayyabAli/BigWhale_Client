@@ -9,9 +9,30 @@ import SocketContext from 'src/context/Socket'
 import { useSelector } from 'react-redux'
 import Icon from 'src/@core/components/icon'
 
-const CappingStatusCard = ({ value, total, cappingFormula, cappingPlanLabel }) => {
-  const pct = Math.min(Math.round((value / total) * 100), 100)
-  const remaining = 100 - pct
+const CappingStatusCard = ({ earnAmount = 0, cappingAmount = 0, cappingFormula, cappingPlanLabel }) => {
+  const earn = Number(earnAmount || 0)
+  const cap = Number(cappingAmount || 0)
+
+  let rawPct = 0
+  if (cap > 0) {
+    rawPct = (earn / cap) * 100
+  }
+
+  // Clamped progress percentage for progress bar (0-100)
+  const pct = Math.min(Math.max(rawPct, 0), 100)
+
+  // Format percentage display gracefully (up to 2 decimals, preventing premature 100% rounding)
+  const getFormattedPct = (val, isEarned = true) => {
+    if (val <= 0) return '0'
+    if (val >= 100 || (isEarned && cap > 0 && earn >= cap)) return '100'
+    const rounded = Number(val.toFixed(2))
+    if (isEarned && rounded >= 100 && earn < cap) return '99.99'
+    return rounded.toString()
+  }
+
+  const displayPct = getFormattedPct(pct, true)
+  const remainingPct = Math.max(0, 100 - pct)
+  const displayRemaining = getFormattedPct(remainingPct, false)
 
   // Color based on progress
   const getColor = () => {
@@ -101,7 +122,7 @@ const CappingStatusCard = ({ value, total, cappingFormula, cappingPlanLabel }) =
               textShadow: `0 0 20px ${color.glow}`,
             }}
           >
-            {pct}%
+            {displayPct}%
           </Typography>
           <Typography sx={{ color: 'rgba(200,215,245,0.4)', fontSize: '0.85rem' }}>
             earned
@@ -151,10 +172,10 @@ const CappingStatusCard = ({ value, total, cappingFormula, cappingPlanLabel }) =
             }}
           >
             <Typography sx={{ color: '#00E5FF', fontWeight: 700, fontSize: '1rem', fontFamily: '"Orbitron", sans-serif' }}>
-              {pct}%
+              {displayPct}%
             </Typography>
             <Typography sx={{ color: 'rgba(200,215,245,0.45)', fontSize: '0.72rem', mt: 0.3 }}>
-              Earned
+              Earned (${earn.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
             </Typography>
           </Box>
           <Box
@@ -166,10 +187,10 @@ const CappingStatusCard = ({ value, total, cappingFormula, cappingPlanLabel }) =
             }}
           >
             <Typography sx={{ color: '#A855F7', fontWeight: 700, fontSize: '1rem', fontFamily: '"Orbitron", sans-serif' }}>
-              {remaining}%
+              {displayRemaining}%
             </Typography>
             <Typography sx={{ color: 'rgba(200,215,245,0.45)', fontSize: '0.72rem', mt: 0.3 }}>
-              Remaining
+              Cap Limit (${cap.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
             </Typography>
           </Box>
         </Box>
@@ -181,7 +202,8 @@ const CappingStatusCard = ({ value, total, cappingFormula, cappingPlanLabel }) =
 export default function CappingStatusWrapper() {
   const currentUser = useSelector(state => state?.getCurrentUser?.user?.data)
   const socket = useContext(SocketContext)
-  const [progress, setProgress] = useState(0)
+  const [earnAmount, setEarnAmount] = useState(0)
+  const [cappingAmount, setCappingAmount] = useState(0)
   const [cappingFormula, setCappingFormula] = useState(null)
   const [cappingPlanLabel, setCappingPlanLabel] = useState(null)
 
@@ -197,10 +219,8 @@ export default function CappingStatusWrapper() {
     const handleCappingAmount = ({ cappingAmount, earnAmount, cappingFormula, cappingPlanLabel }) => {
       setCappingFormula(cappingFormula)
       setCappingPlanLabel(cappingPlanLabel || (cappingFormula ? `${cappingFormula}X` : null))
-      let pct = 0
-      if (cappingAmount > 0) pct = (earnAmount / cappingAmount) * 100
-      if (pct >= 100) pct = 100
-      setProgress(pct)
+      setEarnAmount(Number(earnAmount || 0))
+      setCappingAmount(Number(cappingAmount || 0))
     }
 
     // ── Trigger 1: component mount — initial load ──────────────────────
@@ -244,5 +264,5 @@ export default function CappingStatusWrapper() {
     }
   }, [socket, currentUser?._id])
 
-  return <CappingStatusCard value={progress} total={100} cappingFormula={cappingFormula} cappingPlanLabel={cappingPlanLabel} />
+  return <CappingStatusCard earnAmount={earnAmount} cappingAmount={cappingAmount} cappingFormula={cappingFormula} cappingPlanLabel={cappingPlanLabel} />
 }

@@ -43,6 +43,7 @@ import useBuyFundsKGC from "src/hooks/useBuyFundsKGC";
 import useApproveUSDCtokens from "src/hooks/useApproveUSDCTokens";
 import { buyFund, completeBuyFund } from "src/store/apps/transaction/transactionSlice";
 import useGetUSDTAmount from "src/hooks/useGetUSDTAmount";
+import useGetUSDTAllowance from "src/hooks/useGetUSDTAllowance";
 import useGetCurrentPrice from "src/hooks/useGetCurrentPrice";
 import useGetBuyLimits from "src/hooks/useGetBuyLimits";
 import { usePendingTx } from "src/hooks/usePendingTx";
@@ -79,6 +80,11 @@ const BuyFunds = () => {
     isSuccess: isFetchedUSDC,
     refetch: refetchUSDCTokens,
   } = useGetUSDTAmount(address);
+
+  const { allowanceData, refetchAllowance } = useGetUSDTAllowance(
+    address,
+    CONTRACT_INFO?.main?.address
+  );
   //sockets
   const socket = useContext(SocketContext);
   const {
@@ -175,13 +181,26 @@ const BuyFunds = () => {
       if (
         response?.meta?.requestStatus === "fulfilled"
       ) {
-        approveUsdcTokens({
-          args: [
-            CONTRACT_INFO?.main.address,
-            ethers.utils.parseEther(`${amount}`),
-          ],
-          from: address,
-        });
+        const requiredWei = ethers.utils.parseEther(`${amount}`);
+        const currentAllowanceWei = allowanceData || ethers.BigNumber.from(0);
+
+        if (currentAllowanceWei.gte(requiredWei)) {
+          // Allowance is already enough — proceed directly to buyBW
+          savePendingTx('approval-complete');
+          buyFundsKGC({
+            args: [requiredWei],
+            from: address,
+          });
+        } else {
+          // Allowance is insufficient — trigger approve first
+          approveUsdcTokens({
+            args: [
+              CONTRACT_INFO?.main.address,
+              requiredWei,
+            ],
+            from: address,
+          });
+        }
         return;
       }
       toast.error("Error while buying the funds!", {
@@ -206,7 +225,7 @@ const BuyFunds = () => {
     );
   };
   useEffect(() => {
-    if (isApprovalCompleted) {
+    if (isApprovalCompleted && buyRecord) {
       let amount = 0
       if (Number(Number(buyFundsAmount).toFixed(6)) === Number(Number(availableUSDC).toFixed(6))) {
         amount = availableUSDC
@@ -219,6 +238,7 @@ const BuyFunds = () => {
         args: [ethers.utils.parseEther(`${amount}`)],
         from: address,
       });
+      refetchAllowance?.();
     }
   }, [isApprovalCompleted]);
 

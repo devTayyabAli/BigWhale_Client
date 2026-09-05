@@ -133,6 +133,12 @@ const SellFunds = () => {
         sellFundsTxError ||
         approveSentError ||
         approvalTxError;
+      const errorMessage =
+        error?.reason ||
+        error?.shortMessage ||
+        error?.message ||
+        "Transaction failed, Please try again after some time.";
+
       dispatch(
         createTxLog({
           walletAddress: address,
@@ -140,12 +146,13 @@ const SellFunds = () => {
           error: JSON.stringify(error?.message),
         })
       );
-      toast.error("failed, Please try again after some time.");
+      toast.error(errorMessage);
     }
   }, [
     isSellFundsSentError,
     isSellFundsError,
-    isApproveSentError || isApprovalError,
+    isApproveSentError,
+    isApprovalError,
   ]);
 
   const { kgcTokens: kgcLiveRate } = useGetCurrentPrice();
@@ -614,20 +621,19 @@ const SellFunds = () => {
               onClick={handleSubmit}
             >
               {accError
-                ? `Please connect with ${
-                    user?.data?.walletAddress?.slice(0, 6) +
-                    "..." +
-                    user?.data?.walletAddress?.slice(-6)
-                  } wallet address `
+                ? `Please connect with ${user?.data?.walletAddress?.slice(0, 6) +
+                "..." +
+                user?.data?.walletAddress?.slice(-6)
+                } wallet address `
                 : isApprovekgcTxInProgress
-                ? "Approve Transaction"
-                : isApprovalTokensWaiting
-                ? "Approving Tokens"
-                : isSellFundsUsdcTxInProgress
-                ? "Approving Transaction"
-                : isSellFundsTokensWaiting
-                ? "Transaction is in Progress, Please wait!"
-                : "Sell Now"}
+                  ? "Approve Transaction"
+                  : isApprovalTokensWaiting
+                    ? "Approving Tokens"
+                    : isSellFundsUsdcTxInProgress
+                      ? "Approving Transaction"
+                      : isSellFundsTokensWaiting
+                        ? "Transaction is in Progress, Please wait!"
+                        : "Sell Now"}
             </Button>
           </CardActions>
         </form>

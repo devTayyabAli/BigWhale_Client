@@ -120,7 +120,13 @@ const BuyFunds = () => {
       isApprovalError
     ) {
       const error =
-      buyFundsSentError || buyFundsTxError || approveSentError || approvalTxError;
+        buyFundsSentError || buyFundsTxError || approveSentError || approvalTxError;
+      const errorMessage =
+        error?.reason ||
+        error?.shortMessage ||
+        error?.message ||
+        "Transaction failed, Please try again after some time.";
+
       dispatch(
         createTxLog({
           walletAddress: address,
@@ -129,9 +135,9 @@ const BuyFunds = () => {
         })
       );
       clearPendingTx(); // clear on error too
-      toast.error("failed, Please try again after some time.");
+      toast.error(errorMessage);
     }
-  }, [isBuyFundsSentError, isBuyFundsError, isApproveSentError || isApprovalError]);
+  }, [isBuyFundsSentError, isBuyFundsError, isApproveSentError, isApprovalError]);
 
   const { kgcTokens: kgcLiveRate } = useGetCurrentPrice();
   const { kgcTokens: buyFundAmountInKGC } = useGetKGCLiveTokens(buyFundsAmount);
@@ -155,21 +161,21 @@ const BuyFunds = () => {
       const response = await dispatch(
         buyFund({
           userId,
-          amount:Number(buyFundAmountInKGC) ,
-          type:"buy"
+          amount: Number(buyFundAmountInKGC),
+          type: "buy"
         })
       );
       setBuyRecord(response.payload.data)
-      let  amount=0
-        if(Number(Number(buyFundsAmount).toFixed(6))===Number(Number(availableUSDC).toFixed(6))){
-          amount=availableUSDC
-        }else {
-          amount=buyFundsAmount
-        }
+      let amount = 0
+      if (Number(Number(buyFundsAmount).toFixed(6)) === Number(Number(availableUSDC).toFixed(6))) {
+        amount = availableUSDC
+      } else {
+        amount = buyFundsAmount
+      }
       if (
         response?.meta?.requestStatus === "fulfilled"
-        ) {
-          approveUsdcTokens({
+      ) {
+        approveUsdcTokens({
           args: [
             CONTRACT_INFO?.main.address,
             ethers.utils.parseEther(`${amount}`),
@@ -202,10 +208,10 @@ const BuyFunds = () => {
   useEffect(() => {
     if (isApprovalCompleted) {
       let amount = 0
-      if(Number(Number(buyFundsAmount).toFixed(6))===Number(Number(availableUSDC).toFixed(6))){
-        amount=availableUSDC
-      }else {
-        amount=buyFundsAmount
+      if (Number(Number(buyFundsAmount).toFixed(6)) === Number(Number(availableUSDC).toFixed(6))) {
+        amount = availableUSDC
+      } else {
+        amount = buyFundsAmount
       }
       // Save pending tx state before buyBW call — MetaMask mobile may reload the page
       savePendingTx('approval-complete')
@@ -223,12 +229,12 @@ const BuyFunds = () => {
   }, [buyFundsSentTx]);
 
   useEffect(() => {
-    if (isFetchedUSDC &&Number( Number(availableUSDC)?.toFixed(6)) < +buyFundsAmount) {
+    if (isFetchedUSDC && Number(Number(availableUSDC)?.toFixed(6)) < +buyFundsAmount) {
       setError("Insufficient USDT Tokens!");
     } else {
       setError(null);
     }
-  }, [isFetchedUSDC,buyFundsAmount,availableUSDC]);
+  }, [isFetchedUSDC, buyFundsAmount, availableUSDC]);
   useEffect(() => {
     if (user) {
       setUserId(user?.data?._id);
@@ -243,7 +249,7 @@ const BuyFunds = () => {
   useEffect(() => {
     if (socket && userId) {
       socket.emit("join", userId); // replace userId
-      const handleStake = ({}) => {
+      const handleStake = ({ }) => {
 
         toast.success("Token Exchange successfully done!", {
           duration: 2000,
@@ -351,7 +357,7 @@ const BuyFunds = () => {
             </Grid>
             <Box sx={{ display: "flex", mt: 10, alignItems: "center" }}>
               <Box sx={{ mr: 4 }}>
-              <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
+                <img src="/images/favicon.ico" width="32" height="32" alt="BW-logo" />
 
                 {/* <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
                   <g fill="none">
@@ -414,20 +420,19 @@ const BuyFunds = () => {
               onClick={handleSubmit}
             >
               {accError
-                ? `Please connect with ${
-                    user?.data?.walletAddress?.slice(0, 6) +
-                    "..." +
-                    user?.data?.walletAddress?.slice(-6)
-                  } wallet address `
+                ? `Please connect with ${user?.data?.walletAddress?.slice(0, 6) +
+                "..." +
+                user?.data?.walletAddress?.slice(-6)
+                } wallet address `
                 : isApproveUsdcTxInProgress
-                ? "Approve Transaction"
-                : isApprovalTokensWaiting
-                ? "Approving Tokens"
-                : isBuyFundsUsdcSentTxInProgress
-                ? "Approving Transaction"
-                : isBuyFundsTokensWaiting
-                ? "Transaction is in Progress, Please wait!"
-                : "Buy Now"}
+                  ? "Approve Transaction"
+                  : isApprovalTokensWaiting
+                    ? "Approving Tokens"
+                    : isBuyFundsUsdcSentTxInProgress
+                      ? "Approving Transaction"
+                      : isBuyFundsTokensWaiting
+                        ? "Transaction is in Progress, Please wait!"
+                        : "Buy Now"}
             </Button>
           </CardActions>
         </form>

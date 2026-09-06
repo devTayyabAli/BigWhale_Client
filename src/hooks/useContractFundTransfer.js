@@ -21,6 +21,7 @@ const useContractFundTransfer = () => {
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
     functionName: "sendBW",
+    mode: "recklesslyUnprepared",
   });
 
   const {

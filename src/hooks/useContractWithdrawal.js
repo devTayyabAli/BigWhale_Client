@@ -15,6 +15,7 @@ const useContractWithdrawal = (setLoader) => {
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
     functionName: "withdrawAmount",
+    mode: "recklesslyUnprepared",
   });
 
   const {

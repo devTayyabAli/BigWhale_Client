@@ -1,9 +1,9 @@
 // ** WEB3 Imports
 import { useContractWrite, useWaitForTransaction } from "wagmi";
 import { CONTRACT_INFO } from "src/contract";
-const useSellFundsKGC = () => {
-  //approve contract
 
+const useSellFundsKGC = () => {
+  // sellBW contract write
   const {
     isError: isSellFundsSentError,
     data: sellFundsSentTx,
@@ -15,7 +15,10 @@ const useSellFundsKGC = () => {
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
     functionName: "sellBW",
+    // wagmi v1: skip simulateContract pre-flight — args are passed at call time
+    mode: "recklesslyUnprepared",
   });
+
   const {
     isLoading: isSellFundsTokensWaiting,
     isSuccess: isSellFundsCompleted,

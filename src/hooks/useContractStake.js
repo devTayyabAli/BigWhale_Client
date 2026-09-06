@@ -55,6 +55,7 @@ const useContractStake = (tokensToFetch) => {
     address: CONTRACT_INFO.main.address,
     abi: CONTRACT_INFO.main.abi,
     functionName: "stakeTokens",
+    mode: "recklesslyUnprepared",
   });
   const {
     isLoading: isStakekgcTxInProgress,

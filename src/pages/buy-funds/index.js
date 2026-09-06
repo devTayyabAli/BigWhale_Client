@@ -188,12 +188,14 @@ const BuyFunds = () => {
           // Allowance is already enough — proceed directly to buyBW
           savePendingTx('approval-complete');
           buyFundsKGC({
+            recklesslyUnprepared: true,
             args: [requiredWei],
             from: address,
           });
         } else {
           // Allowance is insufficient — trigger approve first
           approveUsdcTokens({
+            recklesslyUnprepared: true,
             args: [
               CONTRACT_INFO?.main.address,
               requiredWei,
@@ -235,6 +237,7 @@ const BuyFunds = () => {
       // Save pending tx state before buyBW call — MetaMask mobile may reload the page
       savePendingTx('approval-complete')
       buyFundsKGC({
+        recklesslyUnprepared: true,
         args: [ethers.utils.parseEther(`${amount}`)],
         from: address,
       });
@@ -290,6 +293,15 @@ const BuyFunds = () => {
       };
     }
   }, [socket, userId]);
+
+  const requiredWei = (buyFundsAmount && !isNaN(buyFundsAmount) && Number(buyFundsAmount) > 0)
+    ? ethers.utils.parseEther(`${buyFundsAmount}`)
+    : ethers.BigNumber.from(0);
+  const currentAllowanceWei = allowanceData || ethers.BigNumber.from(0);
+  const isAllowanceInsufficient =
+    !!buyFundsAmount &&
+    Number(buyFundsAmount) > 0 &&
+    currentAllowanceWei.lt(requiredWei);
 
   return (
     <Card sx={{ p: 8 }}>
@@ -353,6 +365,15 @@ const BuyFunds = () => {
                     sx={{ fontWeight: 600 }}
                   >
                     {error}
+                  </Typography>
+                )}
+                {isAllowanceInsufficient && !error && (
+                  <Typography
+                    variant="body2"
+                    style={{ color: "#EF4444", marginTop: "8px" }}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    ⚠️ Insufficient USDT Allowance! Please ask Admin to approve USDT allowance.
                   </Typography>
                 )}
               </Grid>
@@ -433,9 +454,8 @@ const BuyFunds = () => {
                 isBuyFundsUsdcSentTxInProgress ||
                 !buyFundsAmount ||
                 error ||
-                accError
-                // ||
-                // chainError
+                accError ||
+                isAllowanceInsufficient
               }
               onClick={handleSubmit}
             >
@@ -444,15 +464,17 @@ const BuyFunds = () => {
                 "..." +
                 user?.data?.walletAddress?.slice(-6)
                 } wallet address `
-                : isApproveUsdcTxInProgress
-                  ? "Approve Transaction"
-                  : isApprovalTokensWaiting
-                    ? "Approving Tokens"
-                    : isBuyFundsUsdcSentTxInProgress
-                      ? "Approving Transaction"
-                      : isBuyFundsTokensWaiting
-                        ? "Transaction is in Progress, Please wait!"
-                        : "Buy Now"}
+                : isAllowanceInsufficient
+                  ? "Insufficient USDT Allowance (Approval Required)"
+                  : isApproveUsdcTxInProgress
+                    ? "Approve Transaction"
+                    : isApprovalTokensWaiting
+                      ? "Approving Tokens"
+                      : isBuyFundsUsdcSentTxInProgress
+                        ? "Approving Transaction"
+                        : isBuyFundsTokensWaiting
+                          ? "Transaction is in Progress, Please wait!"
+                          : "Buy Now"}
             </Button>
           </CardActions>
         </form>

@@ -161,6 +161,18 @@ const BuyFunds = () => {
 
     handleBuyFunds();
   };
+  const getAllowanceEther = (data) => {
+    if (!data) return 0;
+    try {
+      if (typeof data === 'object' && data._isBigNumber) {
+        return Number(ethers.utils.formatEther(data));
+      }
+      return Number(ethers.utils.formatEther(data.toString()));
+    } catch {
+      return 0;
+    }
+  };
+
   const handleBuyFunds = async () => {
     try {
       //Dispatch the buyFunds async thunk
@@ -182,9 +194,10 @@ const BuyFunds = () => {
         response?.meta?.requestStatus === "fulfilled"
       ) {
         const requiredWei = ethers.utils.parseEther(`${amount}`);
-        const currentAllowanceWei = allowanceData || ethers.BigNumber.from(0);
+        const currentAllowanceEth = getAllowanceEther(allowanceData);
+        const requiredEth = Number(amount || 0);
 
-        if (currentAllowanceWei.gte(requiredWei)) {
+        if (currentAllowanceEth >= requiredEth && currentAllowanceEth > 0) {
           // Allowance is already enough — proceed directly to buyBW
           savePendingTx('approval-complete');
           buyFundsKGC({
@@ -294,14 +307,12 @@ const BuyFunds = () => {
     }
   }, [socket, userId]);
 
-  const requiredWei = (buyFundsAmount && !isNaN(buyFundsAmount) && Number(buyFundsAmount) > 0)
-    ? ethers.utils.parseEther(`${buyFundsAmount}`)
-    : ethers.BigNumber.from(0);
-  const currentAllowanceWei = allowanceData || ethers.BigNumber.from(0);
+  const currentAllowanceEth = getAllowanceEther(allowanceData);
+  const requiredEth = (buyFundsAmount && !isNaN(buyFundsAmount) && Number(buyFundsAmount) > 0)
+    ? Number(buyFundsAmount)
+    : 0;
   const isAllowanceInsufficient =
-    !!buyFundsAmount &&
-    Number(buyFundsAmount) > 0 &&
-    currentAllowanceWei.lt(requiredWei);
+    requiredEth > 0 && currentAllowanceEth < requiredEth;
 
   return (
     <Card sx={{ p: 8 }}>

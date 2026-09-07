@@ -381,10 +381,10 @@ const BuyFunds = () => {
                 {isAllowanceInsufficient && !error && (
                   <Typography
                     variant="body2"
-                    style={{ color: "#EF4444", marginTop: "8px" }}
+                    style={{ color: "#C9A84C", marginTop: "8px" }}
                     sx={{ fontWeight: 600 }}
                   >
-                    ⚠️ Insufficient USDT Allowance! Please ask Admin to approve USDT allowance.
+                    ℹ️ USDT Allowance required. Click "Approve USDT & Buy Now" to approve from your wallet.
                   </Typography>
                 )}
               </Grid>
@@ -465,8 +465,7 @@ const BuyFunds = () => {
                 isBuyFundsUsdcSentTxInProgress ||
                 !buyFundsAmount ||
                 error ||
-                accError ||
-                isAllowanceInsufficient
+                accError
               }
               onClick={handleSubmit}
             >
@@ -475,16 +474,16 @@ const BuyFunds = () => {
                 "..." +
                 user?.data?.walletAddress?.slice(-6)
                 } wallet address `
-                : isAllowanceInsufficient
-                  ? "Insufficient USDT Allowance (Approval Required)"
-                  : isApproveUsdcTxInProgress
-                    ? "Approve Transaction"
-                    : isApprovalTokensWaiting
-                      ? "Approving Tokens"
-                      : isBuyFundsUsdcSentTxInProgress
-                        ? "Approving Transaction"
-                        : isBuyFundsTokensWaiting
-                          ? "Transaction is in Progress, Please wait!"
+                : isApproveUsdcTxInProgress
+                  ? "Approve Transaction"
+                  : isApprovalTokensWaiting
+                    ? "Approving Tokens..."
+                    : isBuyFundsUsdcSentTxInProgress
+                      ? "Processing Transaction..."
+                      : isBuyFundsTokensWaiting
+                        ? "Transaction is in Progress, Please wait!"
+                        : isAllowanceInsufficient
+                          ? "Approve USDT & Buy Now"
                           : "Buy Now"}
             </Button>
           </CardActions>

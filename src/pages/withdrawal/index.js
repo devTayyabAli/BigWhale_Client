@@ -28,6 +28,7 @@ import {
 } from "src/store/apps/withdrawal/withdrawalSlice";
 import { completeFundsWithdrawal } from "src/store/apps/withdrawal/completeWithdrawalSlice";
 import { completeWithdraw } from "src/store/apps/transaction/completeTransactionEvents";
+import { getCurrentUser } from "src/store/apps/auth/currentUserSlice";
 
 // ** Redux — Social Verification
 import {
@@ -456,7 +457,14 @@ const Withdrawal = () => {
   const withdrawAmount = async () => {
     try {
       setLoader(true);
-      const response = await dispatch(fundsWithdrawal({ userId, amount: Number(withdrawalAmountInKgc) }));
+      // `amount` = token quantity sent on-chain; `fiatAmount` = the USD value the
+      // user typed. The server validates the 10 BW chunk rule on fiatAmount so a
+      // non-1:1 token price can never cause a false "chunks of 10" rejection.
+      const response = await dispatch(fundsWithdrawal({
+        userId,
+        amount: Number(Number(withdrawalAmountInKgc).toFixed(6)),
+        fiatAmount: Number(withdrawalAmount),
+      }));
       if (response?.meta?.requestStatus === "fulfilled") {
         if (response?.payload?.success === false) {
           toast.error(response?.payload?.message || "Something went wrong please try again later", { duration: 3000 });
@@ -481,6 +489,8 @@ const Withdrawal = () => {
           setWithdrawalAmount("");
           setLoader(false);
           dispatch(fundsWithdrawalAmount(userId));
+          // refresh fast-track counters (unusedDirectCount / lastWithdrawalAt)
+          dispatch(getCurrentUser(userId));
         }
         return;
       }
@@ -532,6 +542,8 @@ const Withdrawal = () => {
         setWithdrawalAmount("");
         setLoader(false);
         dispatch(fundsWithdrawalAmount(userId));
+        // quota is consumed on confirmation → pull fresh counters
+        dispatch(getCurrentUser(userId));
       };
       socket.on("Withdraw", handleWithdrawal);
       return () => { socket.off("Withdraw", handleWithdrawal); socket.emit("leave", userId); };
@@ -549,10 +561,27 @@ const Withdrawal = () => {
   useEffect(() => {
     if (user?.data?.isWithdrawInactive === true) {
       setError(`We're experiencing a technical issue. Our team is currently working to resolve it.`);
-    } else if (user?.data?.totalStakeAmount < 50) {
-      setError(`withdrawal unavailable`);
+    } else if (user?.data?.totalStakeAmount < 5) {
+      setError(`Minimum 5 BW stake required for withdrawal.`);
     }
-  }, [totalStakedAmountInUSDC, withdrawalAmount]);
+  }, [totalStakedAmountInUSDC, withdrawalAmount, user?.data?.totalStakeAmount]);
+
+  const unusedDirectsCount = Number(user?.data?.unusedDirectCount || 0);
+
+  // ── Rolling 24h window since the last CONFIRMED withdrawal ──────────
+  const WITHDRAWAL_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const WITHDRAWAL_CHUNK = 10;
+  const withdrawalWindowRemainingMs = (() => {
+    if (!user?.data?.lastWithdrawalAt) return 0;
+    const elapsed = Date.now() - new Date(user.data.lastWithdrawalAt).getTime();
+    return Math.max(0, WITHDRAWAL_WINDOW_MS - elapsed);
+  })();
+  const isWithdrawalUsedToday = withdrawalWindowRemainingMs > 0;
+  const windowRemainingLabel = (() => {
+    const h = Math.floor(withdrawalWindowRemainingMs / 3600000);
+    const m = Math.ceil((withdrawalWindowRemainingMs % 3600000) / 60000);
+    return `${h}h ${m}m`;
+  })();
 
   return (
     <>
@@ -573,16 +602,88 @@ const Withdrawal = () => {
           <form onSubmit={e => e.preventDefault()}>
             <CardContent>
               <Grid container spacing={5}>
+                {/* ── 2X Fast-Track Universal Withdrawal Status Banner ── */}
+                <Grid item xs={12}>
+                  <Box
+                    sx={{
+                      p: 3,
+                      borderRadius: "14px",
+                      background: "linear-gradient(135deg, rgba(0,229,255,0.08), rgba(168,85,247,0.08))",
+                      border: "1px solid rgba(0,229,255,0.25)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Icon icon="tabler:shield-check" style={{ color: "#00E5FF", fontSize: "1.2rem" }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: "0.9rem", color: "#FFFFFF", fontFamily: '"Orbitron", sans-serif' }}>
+                          2X FAST-TRACK WITHDRAWAL RULES
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          px: 2,
+                          py: 0.5,
+                          borderRadius: "20px",
+                          background: isWithdrawalUsedToday ? "rgba(255,159,67,0.15)" : "rgba(16,185,129,0.15)",
+                          border: `1px solid ${isWithdrawalUsedToday ? "rgba(255,159,67,0.3)" : "rgba(16,185,129,0.3)"}`,
+                        }}
+                      >
+                        <Icon icon={isWithdrawalUsedToday ? "tabler:clock" : "tabler:check"} style={{ fontSize: "0.85rem", color: isWithdrawalUsedToday ? "#FF9F43" : "#10B981" }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", color: isWithdrawalUsedToday ? "#FF9F43" : "#10B981" }}>
+                          {isWithdrawalUsedToday ? `Limit Used — next in ${windowRemainingLabel}` : "1 × 10 BW Available (per 24h)"}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, pt: 1, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Icon icon={unusedDirectsCount >= 1 ? "tabler:circle-check" : "tabler:lock"} style={{ color: unusedDirectsCount >= 1 ? "#10B981" : "#FF9F43", fontSize: "1rem" }} />
+                        <Typography sx={{ fontSize: "0.8rem", color: unusedDirectsCount >= 1 ? "#10B981" : "rgba(200,215,245,0.75)" }}>
+                          {unusedDirectsCount >= 1
+                            ? `✓ ${unusedDirectsCount} New Direct ID(s) Available for Withdrawal`
+                            : "🔒 1 New Active Direct Referral (5 BW) required per 10 BW withdrawal"}
+                        </Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setWithdrawalAmount("10");
+                          setError(false);
+                        }}
+                        sx={{
+                          borderColor: "rgba(0,229,255,0.5)",
+                          color: "#00E5FF",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          py: 0.5,
+                          px: 2,
+                          borderRadius: "8px",
+                          "&:hover": { background: "rgba(0,229,255,0.1)" },
+                        }}
+                      >
+                        Quick 10 BW
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+
                 <Grid item xs={12}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    Enter Amount ($)*
+                    Enter Amount ($) — (Exactly 10 BW, once per 24 hours)*
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
                   <CustomTextField
                     fullWidth
                     label=""
-                    placeholder="Enter Withdrawal amount ($)"
+                    placeholder="Enter Withdrawal amount (10)"
                     onChange={e => {
                       let value = e?.target?.value;
                       value = value?.replace(/^0+(?=\d)/, "");
@@ -597,7 +698,11 @@ const Withdrawal = () => {
                       else { setError(false); }
                       if (user?.data?.isWithdrawInactive === true) setError(`We're experiencing a technical issue. Our team is currently working to resolve it.`);
                       if (minWithdrawalLimitError) setError(`Minimum withdrawal allowed=${minWithdrawalAmountInUSDC || 0}`);
-                      if (user?.data?.totalStakeAmount < 50) setError(`Withdrawal unavailable`);
+                      if (user?.data?.totalStakeAmount < 5) setError(`Minimum 5 BW stake required`);
+                      if (value && +value % WITHDRAWAL_CHUNK !== 0) setError(`Withdrawal must be exactly ${WITHDRAWAL_CHUNK} BW.`);
+                      if (value && +value > WITHDRAWAL_CHUNK) setError(`Only 1 withdrawal of ${WITHDRAWAL_CHUNK} BW is allowed per 24 hours.`);
+                      const requiredJoinings = Math.floor(+value / WITHDRAWAL_CHUNK);
+                      if (requiredJoinings > unusedDirectsCount) setError(`Requires ${requiredJoinings} new direct joining (5 BW stake). (Available: ${unusedDirectsCount})`);
                       setWithdrawalAmount(value);
                     }}
                     value={withdrawalAmount}
@@ -653,20 +758,25 @@ const Withdrawal = () => {
                 disabled={
                   isWithdrawUsdcTxInProgress || isWithdrawalTokensWaiting ||
                   !withdrawalAmount || error || loader || accError ||
-                  fetchStatus === "loading"
+                  fetchStatus === "loading" || isWithdrawalUsedToday ||
+                  unusedDirectsCount < 1
                 }
               >
-                {user?.data?.totalStakeAmount < 50
-                  ? "Withdrawal unavailable"
-                  : accError
-                    ? `Please connect with ${user?.data?.walletAddress?.slice(0, 6) + "..." + user?.data?.walletAddress?.slice(-6)} wallet address`
-                    : isWithdrawUsdcTxInProgress
-                      ? "Approve Transaction!"
-                      : isWithdrawalTokensWaiting || loader
-                        ? "Transaction is in Progress, Please Wait!"
-                        : fetchStatus === "loading"
-                          ? "Loading..."
-                          : "Submit"}
+                {user?.data?.totalStakeAmount < 5
+                  ? "Minimum 5 BW Stake Required"
+                  : isWithdrawalUsedToday
+                    ? `Limit Reached — Next Withdrawal in ${windowRemainingLabel}`
+                    : unusedDirectsCount < 1
+                      ? "1 New Direct ID Required to Withdraw"
+                      : accError
+                        ? `Please connect with ${user?.data?.walletAddress?.slice(0, 6) + "..." + user?.data?.walletAddress?.slice(-6)} wallet address`
+                        : isWithdrawUsdcTxInProgress
+                          ? "Approve Transaction!"
+                          : isWithdrawalTokensWaiting || loader
+                            ? "Transaction is in Progress, Please Wait!"
+                            : fetchStatus === "loading"
+                              ? "Loading..."
+                              : "Submit"}
               </Button>
             </CardActions>
           </form>

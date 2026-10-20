@@ -14,11 +14,12 @@ import CardActions from "@mui/material/CardActions";
 
 // ** Custom Component Import
 import CustomTextField from "src/@core/components/mui/text-field";
+import Icon from "src/@core/components/icon";
 import { useEffect, useState } from "react";
 import { useContractRegister } from "src/hooks/useContractRegister";
 import { useAccount } from "wagmi";
 import { useDispatch, useSelector } from "react-redux";
-import { stakeKGC, getStakeKGCHistory } from "src/store/apps/stake/stakeSlice";
+import { stakeKGC } from "src/store/apps/stake/stakeSlice";
 import { completeStakekGC } from "src/store/apps/stake/completeStakeSlice";
 import { completeStack } from "src/store/apps/transaction/completeTransactionEvents";
 import { createTxLog } from "src/store/apps/transaction/transactionLogsSlice";
@@ -65,7 +66,7 @@ const Stake = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state?.login?.user);
   const { accError, chainError, chain } = useValidateAccount();
-  const { stake, stakeHistory } = useSelector((state) => state.stake);
+  const { stake } = useSelector((state) => state.stake);
 
   const [userId, setUserId] = useState(null);
   const [stakeAmount, setStakeAmount] = useState(null);
@@ -73,8 +74,6 @@ const Stake = () => {
   const [kgcAmount, setKGCAmount] = useState(0);
   const [minMaxError, setMinMaxError] = useState(null);
   const [error, setError] = useState(null);
-  const [previousStakeBW, setPreviousStakeBW] = useState(null);
-  const [restakeError, setRestakeError] = useState(null);
 
   // Persist pending tx across MetaMask mobile page reloads
   const { savePendingTx, clearPendingTx } = usePendingTx('stake');
@@ -157,40 +156,6 @@ const Stake = () => {
   const { stakeLimitInUSDC, refetchMinUSDC, refetchMaxUSDC } =
     useReadSakeLimitInUSDC(stakeLimit.min, stakeLimit.max);
 
-  // ── Fetch user stake history to check for previous stake ───────────────
-  useEffect(() => {
-    if (userId) {
-      dispatch(getStakeKGCHistory({ userId, page: 1, limit: 1 }));
-    }
-  }, [userId, dispatch]);
-
-  useEffect(() => {
-    if (stakeHistory?.data?.stakes?.length > 0) {
-      const lastStake = stakeHistory.data.stakes[0];
-      if (lastStake?.amount && Number(lastStake.amount) > 0) {
-        setPreviousStakeBW(Number(lastStake.amount));
-      }
-    }
-  }, [stakeHistory]);
-
-  const minRequiredBW = previousStakeBW ? previousStakeBW + 50 : 0;
-
-  // ── Restake validation check (+50 BW over previous stake) ─────────────
-  useEffect(() => {
-    if (previousStakeBW && previousStakeBW > 0 && stakeAmount && stakeAmountInKGC) {
-      const currentKgcBW = roundKgcAmount(Number(stakeAmountInKGC || 0));
-      if (currentKgcBW < minRequiredBW) {
-        setRestakeError(
-          `Restake requirement: Amount must be at least ${minRequiredBW} BW tokens (previous stake: ${previousStakeBW} BW + 50 BW requirement)`
-        );
-      } else {
-        setRestakeError(null);
-      }
-    } else {
-      setRestakeError(null);
-    }
-  }, [previousStakeBW, minRequiredBW, stakeAmount, stakeAmountInKGC]);
-
   const handleSubmit = async () => {
     if (chain?.id !== ENV.chainId) {
       return switchNetwork?.(ENV.chainId);
@@ -201,27 +166,25 @@ const Stake = () => {
       });
     }
 
-    if (previousStakeBW && previousStakeBW > 0) {
-      const currentKgcBW = roundKgcAmount(Number(stakeAmountInKGC || 0));
-      if (currentKgcBW < minRequiredBW) {
-        return toast.error(
-          `Restake requirement: Amount must be at least ${minRequiredBW} BW tokens (previous stake: ${previousStakeBW} BW + 50 BW requirement)`,
-          { duration: 5000 }
-        );
-      }
-    }
-
     addStake();
   };
   const addStake = async () => {
     try {
       // Dispatch the stakeKgc async thunk
+      // fiatAmount = USD value typed by the user. The server enforces the fixed
+      // 5 BW 2X Fast-Track stake on this value (token price independent).
       const response = await dispatch(
         stakeKGC({
           userId,
           amount: roundKgcAmount(Number(stakeAmountInKGC)),
+          fiatAmount: Number(stakeAmount),
         })
       );
+
+      if (response?.meta?.requestStatus === "fulfilled" && response?.payload?.success === false) {
+        toast.error(response?.payload?.message || "Stake rejected", { duration: 4000 });
+        return;
+      }
 
       if (response?.meta?.requestStatus === "fulfilled") {
         approveKgcTokens({
@@ -324,6 +287,54 @@ const Stake = () => {
         <form onSubmit={(e) => e.preventDefault()}>
           <CardContent>
             <Grid container spacing={5}>
+              {/* ── 2X Fast-Track Quick Stake Banner ── */}
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: "14px",
+                    background: "linear-gradient(135deg, rgba(0,229,255,0.08), rgba(168,85,247,0.08))",
+                    border: "1px solid rgba(0,229,255,0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 2,
+                  }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Icon icon="tabler:bolt" style={{ color: "#00E5FF", fontSize: "1.3rem" }} />
+                      <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#FFFFFF", fontFamily: '"Orbitron", sans-serif' }}>
+                        2X FAST-TRACK VIRAL STAKE (5 BW)
+                      </Typography>
+                    </Box>
+                    <Typography sx={{ color: "rgba(200,215,245,0.7)", fontSize: "0.8rem", mt: 0.5 }}>
+                      Fixed 5 BW entry (only amount accepted) • 10 BW paid 24h later once you have 5 staked directs • Re-stake daily
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      setStakeAmount("5");
+                      setMinMaxError(null);
+                      setError(null);
+                    }}
+                    sx={{
+                      background: "linear-gradient(135deg, #00E5FF, #7367F0)",
+                      color: "#FFFFFF",
+                      fontWeight: 700,
+                      borderRadius: "10px",
+                      px: 3,
+                      boxShadow: "0 4px 14px 0 rgba(0, 229, 255, 0.3)",
+                      "&:hover": { background: "linear-gradient(135deg, #00C4DB, #5F52E6)" },
+                    }}
+                  >
+                    Select 5 BW
+                  </Button>
+                </Box>
+              </Grid>
+
               <Grid item xs={12}>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   Enter Amount ($)*
@@ -399,36 +410,8 @@ const Stake = () => {
                     {minMaxError}
                   </Typography>
                 )}
-                {restakeError && !error && !minMaxError && (
-                  <Typography
-                    variant="body2"
-                    style={{ color: "#FF2E9F" }}
-                    sx={{ fontWeight: 600, mt: 1 }}
-                  >
-                    {restakeError}
-                  </Typography>
-                )}
               </Grid>
             </Grid>
-
-            {previousStakeBW > 0 && (
-              <Box
-                sx={{
-                  mt: 3,
-                  p: 2.5,
-                  borderRadius: "12px",
-                  background: "rgba(0,229,255,0.06)",
-                  border: "1px solid rgba(0,229,255,0.2)",
-                }}
-              >
-                <Typography variant="body2" sx={{ color: "#00E5FF", fontWeight: 700 }}>
-                  Restake Requirement Active
-                </Typography>
-                <Typography variant="caption" sx={{ color: "rgba(200,215,245,0.75)", display: "block", mt: 0.5, fontSize: "0.82rem" }}>
-                  Previous stake: <strong>{previousStakeBW} BW</strong>. You must restake at least <strong>{minRequiredBW} BW</strong> (+50 BW rule).
-                </Typography>
-              </Box>
-            )}
 
             <Grid container spacing={5} mt={2}>
               <Grid item xs={12}>
@@ -643,6 +626,23 @@ const Stake = () => {
                   0.40%
                 </Typography>
               </Typography>
+              <Typography
+                variant="h5"
+                sx={{ textAlign: "center", mt: 1, mb: 1 }}
+              >
+                <Typography variant="span" sx={{ fontSize: 14 }}>
+                  2X Fast-Track:
+                </Typography>
+                <Typography
+                  variant="span"
+                  sx={{ px: 2, color: "#10B981", fontWeight: 700 }}
+                >
+                  2X (10 BW) per 5 BW stake
+                </Typography>
+                <Typography variant="span" sx={{ fontSize: 11, color: "rgba(200,215,245,0.5)" }}>
+                  (paid once, 24h after stake — requires 5 staked directs)
+                </Typography>
+              </Typography>
             </Box>
           </CardContent>
           <Divider sx={{ m: "0 !important" }} />
@@ -658,8 +658,7 @@ const Stake = () => {
                   !stakeAmount ||
                   error ||
                   accError ||
-                  minMaxError ||
-                  restakeError
+                  minMaxError
                 )
                   ? {
                     scale: [1, 1.02, 1],
@@ -686,8 +685,7 @@ const Stake = () => {
                   !stakeAmount ||
                   error ||
                   accError ||
-                  minMaxError ||
-                  Boolean(restakeError)
+                  minMaxError
                 }
                 onClick={handleSubmit}
               >

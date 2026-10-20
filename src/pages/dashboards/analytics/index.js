@@ -21,6 +21,7 @@ import AccountDetails from 'src/views/dashboards/analytics/AccountDetails'
 import DirectTeam from 'src/views/dashboards/analytics/DirectTeam'
 import DownlineTeam from 'src/views/dashboards/analytics/DownlineTeam'
 import CappingStatus from 'src/views/dashboards/analytics/CappingStatus'
+import FastTrack2XCard from 'src/views/dashboards/analytics/FastTrack2XCard'
 import UserProfileHeader from 'src/views/pages/user-profile/UserProfileHeader'
 
 import { getReferralStats, resetLevelBonusStatus } from 'src/store/apps/levelBonus/levelBonusSlice'
@@ -190,6 +191,12 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12}>
           <UserProfileHeader onRefresh={handleRefresh} isRefreshing={isRefreshing} />
         </Grid>
+
+        {/* 2X Fast-Track Viral Status */}
+        <Grid item xs={12}>
+          <FastTrack2XCard />
+        </Grid>
+
         {/* Wallet & Token */}
         <Grid item xs={12}>
           <SectionHeader icon='tabler:wallet' title='Wallet & Tokens' subtitle='Manage your assets' />

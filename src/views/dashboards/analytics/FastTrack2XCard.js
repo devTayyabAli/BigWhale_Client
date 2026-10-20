@@ -11,6 +11,10 @@ import Link from 'next/link'
 import { useSelector } from 'react-redux'
 import Icon from 'src/@core/components/icon'
 
+const bodyText = {
+  fontFamily: '"Space Grotesk", sans-serif',
+}
+
 const FastTrack2XCard = () => {
   const currentUser = useSelector(state => state?.getCurrentUser?.user?.data)
   const referralStats = useSelector(state => state?.levelBonus?.referralStats?.data)
@@ -75,7 +79,7 @@ const FastTrack2XCard = () => {
       <CardContent sx={{ p: 4 }}>
         {/* Header Row */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: '1 1 260px' }}>
             <Box
               sx={{
                 width: 44,
@@ -90,7 +94,7 @@ const FastTrack2XCard = () => {
             >
               <Icon icon='tabler:bolt' style={{ color: '#00E5FF', fontSize: '1.5rem' }} />
             </Box>
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography
                 sx={{
                   fontFamily: '"Orbitron", sans-serif',
@@ -98,12 +102,22 @@ const FastTrack2XCard = () => {
                   fontSize: '1.05rem',
                   color: '#FFFFFF',
                   letterSpacing: '0.04em',
+                  lineHeight: 1.3,
                 }}
               >
                 2X FAST-TRACK VIRAL ENGINE
               </Typography>
-              <Typography sx={{ color: 'rgba(200,215,245,0.6)', fontSize: '0.78rem' }}>
-                5 BW Fixed Stake • 2X Daily Yield • 20% Lifetime Salary
+              <Typography
+                sx={{
+                  ...bodyText,
+                  color: 'rgba(200,215,245,0.72)',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
+                  lineHeight: 1.45,
+                  mt: 0.4,
+                }}
+              >
+                5 BW stake pays 10 BW once, 24h later. Salary comes from the 20% withdrawal fee.
               </Typography>
             </Box>
           </Box>
@@ -111,7 +125,7 @@ const FastTrack2XCard = () => {
           {/* Status Badge */}
           <Chip
             icon={<Icon icon={is2XUnlocked ? 'tabler:check' : 'tabler:lock'} style={{ fontSize: '1rem', color: is2XUnlocked ? '#10B981' : '#FF9F43' }} />}
-            label={is2XUnlocked ? '2X DAILY ACTIVE (10 BW/DAY)' : '2X DAILY LOCKED'}
+            label={is2XUnlocked ? '2X UNLOCKED' : '2X LOCKED'}
             sx={{
               fontWeight: 700,
               fontFamily: '"Space Grotesk", sans-serif',
@@ -138,7 +152,7 @@ const FastTrack2XCard = () => {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography sx={{ color: 'rgba(200,215,245,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
+                <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
                   5 DIRECTS QUALIFICATION
                 </Typography>
                 <Icon icon='tabler:users' style={{ color: '#00E5FF', fontSize: '1.1rem' }} />
@@ -169,9 +183,9 @@ const FastTrack2XCard = () => {
                   mb: 1,
                 }}
               />
-              <Typography sx={{ color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
+              <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
                 {is2XUnlocked
-                  ? '✓ Qualified! Each 5 BW stake pays 10 BW after 24h'
+                  ? 'Qualified. Each 5 BW stake pays 10 BW after 24h'
                   : `${Math.max(0, unlockTarget - directCount)} more direct referrals to unlock 2X`}
               </Typography>
             </Box>
@@ -189,7 +203,7 @@ const FastTrack2XCard = () => {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography sx={{ color: 'rgba(200,215,245,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
+                <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
                   UNUSED DIRECTS FOR WITHDRAWAL
                 </Typography>
                 <Icon icon='tabler:credit-card' style={{ color: '#A855F7', fontSize: '1.1rem' }} />
@@ -210,11 +224,11 @@ const FastTrack2XCard = () => {
                   icon={unusedDirects > 0 ? 'tabler:circle-check' : 'tabler:alert-triangle'}
                   style={{ color: unusedDirects > 0 ? '#10B981' : '#FF9F43', fontSize: '0.9rem' }}
                 />
-                <Typography sx={{ color: unusedDirects > 0 ? '#10B981' : '#FF9F43', fontSize: '0.72rem', fontWeight: 600 }}>
+                <Typography sx={{ ...bodyText, color: unusedDirects > 0 ? '#10B981' : '#FF9F43', fontSize: '0.72rem', fontWeight: 600 }}>
                   {unusedDirects > 0 ? '10 BW Withdrawal Ready' : '1 Joining Needed per 10 BW'}
                 </Typography>
               </Box>
-              <Typography sx={{ color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
+              <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
                 Quota: {isWithdrawalUsedToday ? `Used — next in ${windowRemainingLabel}` : '1 × 10 BW available (per 24h)'}
               </Typography>
             </Box>
@@ -232,7 +246,7 @@ const FastTrack2XCard = () => {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography sx={{ color: 'rgba(200,215,245,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
+                <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
                   LIFETIME SALARY RANK
                 </Typography>
                 <Icon icon='tabler:crown' style={{ color: '#FFD700', fontSize: '1.1rem' }} />
@@ -248,10 +262,10 @@ const FastTrack2XCard = () => {
               >
                 {rankInfo.title}
               </Typography>
-              <Typography sx={{ color: '#00E5FF', fontSize: '0.8rem', fontWeight: 600, mb: 1 }}>
-                Pool Share: {rankInfo.pct} of Daily Withdrawal Fees
+              <Typography sx={{ ...bodyText, color: '#00E5FF', fontSize: '0.8rem', fontWeight: 600, mb: 1 }}>
+                Pool share: {rankInfo.pct} of the withdrawal fee
               </Typography>
-              <Typography sx={{ color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
+              <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
                 {rankInfo.next
                   ? `Next Tier Target: ${rankInfo.next} Total Direct Members`
                   : '🏆 Maximum Rank Achieved!'}
@@ -270,6 +284,7 @@ const FastTrack2XCard = () => {
             sx={{
               borderColor: 'rgba(0,229,255,0.4)',
               color: '#00E5FF',
+              ...bodyText,
               fontWeight: 700,
               borderRadius: '10px',
               px: 3,
@@ -290,6 +305,7 @@ const FastTrack2XCard = () => {
             disabled={unusedDirects < 1 || isWithdrawalUsedToday}
             sx={{
               background: 'linear-gradient(135deg, #00E5FF, #7367F0)',
+              ...bodyText,
               color: '#FFFFFF',
               fontWeight: 700,
               borderRadius: '10px',

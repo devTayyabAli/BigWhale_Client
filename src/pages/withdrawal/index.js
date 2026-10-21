@@ -15,7 +15,7 @@ import Fade from "@mui/material/Fade";
 
 // ** React Imports
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState, useContext, useCallback } from "react";
+import { useEffect, useState, useContext, useCallback, useRef } from "react";
 
 // ** Custom Component Import
 import CustomTextField from "src/@core/components/mui/text-field";
@@ -24,6 +24,7 @@ import { useAccount } from "wagmi";
 // ** Redux — Withdrawal
 import {
   fundsWithdrawal,
+  withdrawSalary,
   fundsWithdrawalAmount,
 } from "src/store/apps/withdrawal/withdrawalSlice";
 import { completeFundsWithdrawal } from "src/store/apps/withdrawal/completeWithdrawalSlice";
@@ -350,6 +351,8 @@ const Withdrawal = () => {
   const [error, setError]   = useState(false);
   const [userId, setUserId] = useState(null);
   const [loader, setLoader] = useState(false);
+  const [salaryLoader, setSalaryLoader] = useState(false);
+  const salaryIntent = useRef(false);
   const [socialGateOpen, setSocialGateOpen] = useState(false);
   const [contractWithdrawAmount, setContractWithdrawAmount] = useState(0);
 
@@ -385,6 +388,8 @@ const Withdrawal = () => {
   } = useContractWithdrawal(setLoader);
 
   const { tokenBlnc: totalStakedAmountInUSDC, isSuccess } = useGetUSDCTokens(data?.combinedTotalAmount);
+  const salaryBw = Number(data?.salaryAvailable || 0);
+  const { tokenBlnc: salaryUsd } = useGetUSDCTokens(salaryBw);
   const { kgcTokens: withdrawalAmountInKgc }              = useGetKGCLiveTokens(withdrawalAmount);
   const { minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
 
@@ -510,8 +515,45 @@ const Withdrawal = () => {
     withdrawAmount();
   };
 
+  const withdrawSalaryNow = async () => {
+    if (!(salaryBw > 0) || !userId) return;
+    setSalaryLoader(true);
+    try {
+      const response = await dispatch(withdrawSalary({
+        userId,
+        amount: Number(salaryBw.toFixed(8)),
+      }));
+      if (response?.meta?.requestStatus === "fulfilled" && response?.payload?.success) {
+        toast.success(response?.payload?.message || "Salary withdrawn. No fee was charged.", { duration: 3000 });
+        dispatch(fundsWithdrawalAmount(userId));
+        dispatch(getCurrentUser(userId));
+      } else {
+        const message = response?.payload?.message || "Salary withdrawal failed";
+        toast.error(message, { duration: 3000 });
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Salary withdrawal failed", { duration: 3000 });
+    } finally {
+      setSalaryLoader(false);
+    }
+  };
+
+  const handleSalaryClick = () => {
+    if (!bothConfirmed) {
+      salaryIntent.current = true;
+      setSocialGateOpen(true);
+      return;
+    }
+    withdrawSalaryNow();
+  };
+
   const handleVerified = () => {
     setSocialGateOpen(false);
+    if (salaryIntent.current) {
+      salaryIntent.current = false;
+      withdrawSalaryNow();
+      return;
+    }
     if (chain?.id !== ENV.chainId) { switchNetwork?.(ENV.chainId); return; }
     withdrawAmount();
   };
@@ -599,6 +641,48 @@ const Withdrawal = () => {
             title={`Available Balance : $${totalStakedAmountInUSDC || 0}`}
           />
           <Divider sx={{ m: "0 !important" }} />
+          <Box sx={{ px: 5, pt: 5 }}>
+            <Box
+              sx={{
+                p: 3,
+                borderRadius: "14px",
+                background: "linear-gradient(135deg, rgba(255,215,0,0.08), rgba(16,185,129,0.08))",
+                border: "1px solid rgba(255,215,0,0.35)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography sx={{ fontFamily: '"Orbitron", sans-serif', fontWeight: 700, fontSize: "0.95rem", color: "#FFD700" }}>
+                  Lifetime Salary
+                </Typography>
+                <Typography sx={{ fontFamily: '"Space Grotesk", sans-serif', color: "#FFFFFF", fontWeight: 700, fontSize: "1.15rem", mt: 0.5 }}>
+                  ${Number(salaryUsd || 0).toFixed(2)} ({salaryBw.toFixed(4)} BW)
+                </Typography>
+                <Typography sx={{ fontFamily: '"Space Grotesk", sans-serif', color: "rgba(200,215,245,0.65)", fontSize: "0.78rem", mt: 0.5 }}>
+                  Paid in full. No 20% fee, no 10 BW limit, and no new direct required.
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                onClick={handleSalaryClick}
+                disabled={salaryLoader || !(salaryBw > 0)}
+                sx={{
+                  fontFamily: '"Space Grotesk", sans-serif',
+                  fontWeight: 700,
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #FFD700, #10B981)",
+                  color: "#0B1220",
+                  "&:hover": { background: "linear-gradient(135deg, #FFE566, #34D399)" },
+                }}
+              >
+                {salaryLoader ? "Sending salary..." : "Withdraw Salary"}
+              </Button>
+            </Box>
+          </Box>
           <form onSubmit={e => e.preventDefault()}>
             <CardContent>
               <Grid container spacing={5}>

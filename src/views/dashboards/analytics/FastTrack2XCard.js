@@ -300,6 +300,27 @@ const FastTrack2XCard = () => {
           <Button
             component={Link}
             href='/withdrawal'
+            variant='outlined'
+            startIcon={<Icon icon='tabler:crown' />}
+            sx={{
+              borderColor: 'rgba(255,215,0,0.55)',
+              color: '#FFD700',
+              ...bodyText,
+              fontWeight: 700,
+              borderRadius: '10px',
+              px: 3,
+              '&:hover': {
+                borderColor: '#FFD700',
+                background: 'rgba(255,215,0,0.08)',
+              },
+            }}
+          >
+            Withdraw Salary
+          </Button>
+
+          <Button
+            component={Link}
+            href='/withdrawal'
             variant='contained'
             startIcon={<Icon icon='tabler:wallet' />}
             disabled={unusedDirects < 1 || isWithdrawalUsedToday}

@@ -25,6 +25,18 @@ export const fundsWithdrawal = createAsyncThunk(
   }
 );
 // // Create an async thunk function for funds transfer
+export const withdrawSalary = createAsyncThunk(
+  "withdrawSalary",
+  async (data) => {
+    try {
+      const response = await api.post(`/withdrawal/salary`, data);
+      return response.data;
+    } catch (error) {
+      return error?.response?.data || { success: false, message: "Salary withdrawal failed" };
+    }
+  }
+);
+
 export const fundsWithdrawalAmount = createAsyncThunk(
   "fundsWithdrawalAmount",
   async (id) => {

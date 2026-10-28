@@ -22,8 +22,14 @@ const FastTrack2XCard = () => {
   const is2XUnlocked = Boolean(currentUser?.is2XDailyUnlocked)
   // Directs that have actually STAKED (what unlocks 2X / ranks). Falls back to
   // active directs for older API responses.
-  const directCount = Number(
+  const stakedDirectCount = Number(
     referralStats?.fastTrackDirectCount ?? referralStats?.activeDirectReferrals ?? 0
+  )
+  // Every joined direct shows immediately (1, 2, 3...) even before they stake.
+  const directCount = Math.max(
+    stakedDirectCount,
+    Number(referralStats?.directReferral || 0),
+    Number(referralStats?.joinedDirectCount || 0)
   )
   const unusedDirects = Number(currentUser?.unusedDirectCount || 0)
   const currentRank = currentUser?.userRankId || null
@@ -186,7 +192,7 @@ const FastTrack2XCard = () => {
               <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
                 {is2XUnlocked
                   ? 'Qualified. Each 5 BW stake pays 10 BW after 24h'
-                  : `${Math.max(0, unlockTarget - directCount)} more direct referrals to unlock 2X`}
+                  : `${Math.max(0, unlockTarget - stakedDirectCount)} more staked directs to unlock 2X (${stakedDirectCount} staked so far)`}
               </Typography>
             </Box>
           </Grid>

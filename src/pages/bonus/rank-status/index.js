@@ -33,9 +33,8 @@ const RankStatus = () => {
     <>
       <Box sx={{ my: 4 }}>
         <Typography variant="p" sx={{ color: "#C9A84C", my: 4 }}>
-          Note : In Rank Reward Only Direct Active ID and Direct Active ID Downline Team & Business
-          will be count. In-Active Direct ID and In-Active Direct ID Downline Team & Business will
-          be not count.
+          Note : Ranks are based on your Staked Directs. A direct counts only after confirming a 5 BW
+          stake. Ranks are lifetime and are never removed.
         </Typography>
       </Box>
       <Box sx={{ mb: 8 }}>

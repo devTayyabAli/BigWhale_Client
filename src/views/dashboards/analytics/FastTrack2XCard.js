@@ -17,7 +17,7 @@ const bodyText = {
 
 const FastTrack2XCard = () => {
   const currentUser = useSelector(state => state?.getCurrentUser?.user?.data)
-  const referralStats = useSelector(state => state?.levelBonus?.referralStats?.data)
+  const referralStats = useSelector(state => state?.levelBonus?.referralStats)
 
   const is2XUnlocked = Boolean(currentUser?.is2XDailyUnlocked)
   // Directs that have actually STAKED (what unlocks 2X / ranks). Falls back to
@@ -31,7 +31,7 @@ const FastTrack2XCard = () => {
     Number(referralStats?.directReferral || 0),
     Number(referralStats?.joinedDirectCount || 0)
   )
-  const unusedDirects = Number(currentUser?.unusedDirectCount || 0)
+  const withdrawalLimit = 10 // every withdrawal is exactly 10 BW
   const currentRank = currentUser?.userRankId || null
 
   // Progress towards 5 directs to unlock 2X
@@ -60,7 +60,7 @@ const FastTrack2XCard = () => {
     const elapsed = Date.now() - new Date(currentUser.lastWithdrawalAt).getTime()
     return Math.max(0, 24 * 60 * 60 * 1000 - elapsed)
   })()
-  const isWithdrawalUsedToday = windowRemainingMs > 0
+  const isWithdrawalUsedToday = false // unlimited withdrawals, no 24h window
   const windowRemainingLabel = `${Math.floor(windowRemainingMs / 3600000)}h ${Math.ceil((windowRemainingMs % 3600000) / 60000)}m`
 
   return (
@@ -123,7 +123,7 @@ const FastTrack2XCard = () => {
                   mt: 0.4,
                 }}
               >
-                5 BW stake pays 10 BW once, 24h later. Salary comes from the 20% withdrawal fee.
+                5 BW stake pays 10 BW once, 24h later. Every withdrawal: 50% auto-restakes, 50% funds Salary. Claim your Salary anytime.
               </Typography>
             </Box>
           </Box>
@@ -197,7 +197,7 @@ const FastTrack2XCard = () => {
             </Box>
           </Grid>
 
-          {/* Box 2: Withdrawal Readiness */}
+          {/* Box 2: Withdrawal Limit (rank based) */}
           <Grid item xs={12} sm={4}>
             <Box
               sx={{
@@ -210,7 +210,7 @@ const FastTrack2XCard = () => {
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
-                  UNUSED DIRECTS FOR WITHDRAWAL
+                  WITHDRAWAL LIMIT
                 </Typography>
                 <Icon icon='tabler:credit-card' style={{ color: '#A855F7', fontSize: '1.1rem' }} />
               </Box>
@@ -219,23 +219,23 @@ const FastTrack2XCard = () => {
                   fontFamily: '"Orbitron", sans-serif',
                   fontWeight: 700,
                   fontSize: '1.2rem',
-                  color: unusedDirects > 0 ? '#10B981' : '#FF9F43',
+                  color: isWithdrawalUsedToday ? '#FF9F43' : '#10B981',
                   mb: 1,
                 }}
               >
-                {unusedDirects} Available
+                {withdrawalLimit} BW each
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                 <Icon
-                  icon={unusedDirects > 0 ? 'tabler:circle-check' : 'tabler:alert-triangle'}
-                  style={{ color: unusedDirects > 0 ? '#10B981' : '#FF9F43', fontSize: '0.9rem' }}
+                  icon='tabler:circle-check'
+                  style={{ color: '#10B981', fontSize: '0.9rem' }}
                 />
-                <Typography sx={{ ...bodyText, color: unusedDirects > 0 ? '#10B981' : '#FF9F43', fontSize: '0.72rem', fontWeight: 600 }}>
-                  {unusedDirects > 0 ? '10 BW Withdrawal Ready' : '1 Joining Needed per 10 BW'}
+                <Typography sx={{ ...bodyText, color: '#10B981', fontSize: '0.72rem', fontWeight: 600 }}>
+                  No new joining needed
                 </Typography>
               </Box>
               <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
-                Quota: {isWithdrawalUsedToday ? `Used — next in ${windowRemainingLabel}` : '1 × 10 BW available (per 24h)'}
+                Quota: {isWithdrawalUsedToday ? `Used — next in ${windowRemainingLabel}` : `Unlimited withdrawals, ${withdrawalLimit} BW each`}
               </Typography>
             </Box>
           </Grid>
@@ -329,7 +329,7 @@ const FastTrack2XCard = () => {
             href='/withdrawal'
             variant='contained'
             startIcon={<Icon icon='tabler:wallet' />}
-            disabled={unusedDirects < 1 || isWithdrawalUsedToday}
+            disabled={!is2XUnlocked}
             sx={{
               background: 'linear-gradient(135deg, #00E5FF, #7367F0)',
               ...bodyText,
@@ -345,9 +345,7 @@ const FastTrack2XCard = () => {
           >
             {isWithdrawalUsedToday
               ? `Next in ${windowRemainingLabel}`
-              : unusedDirects < 1
-              ? 'Join 1 Direct to Withdraw'
-              : 'Withdraw 10 BW'}
+              : is2XUnlocked ? `Withdraw ${withdrawalLimit} BW` : 'Complete 5 Directs to Withdraw'}
           </Button>
         </Box>
       </CardContent>

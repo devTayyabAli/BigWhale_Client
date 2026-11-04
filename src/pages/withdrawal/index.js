@@ -393,15 +393,23 @@ const Withdrawal = () => {
   const { kgcTokens: withdrawalAmountInKgc }              = useGetKGCLiveTokens(withdrawalAmount);
   const { minWithdrawalAmountInUSDC, isMinWithdrawalUsdcFetched } = useGetMinWithdrawalAmountInKgc();
 
+  const WITHDRAWAL_CHUNK = 10; // minimum withdrawal (BW)
+  // Rank-based limit and split come from the server (fallbacks match rank 0).
+  const ft = data?.fastTrack || {};
+  const withdrawalLimit = WITHDRAWAL_CHUNK; // every withdrawal is exactly 10 BW
+  const restakePct = Number(ft.restakePct ?? 50);
+  const salaryPct = Number(ft.salaryPct ?? 20);
+  const userPct = Number(ft.userPct ?? 100 - restakePct - salaryPct);
+
   // Use live gas fee if available, otherwise fall back to the fixed deduction %.
   const feeKgc = networkFeeKgc > 0
     ? networkFeeKgc
-    : (deductionPct > 0 ? Number(withdrawalAmountInKgc) * 0.8 * (deductionPct / 100) : 0);
+    : (deductionPct > 0 ? Number(withdrawalAmountInKgc) * (userPct / 100) * (deductionPct / 100) : 0);
 
   const bwPriceInUsd = withdrawalAmountInKgc > 0 ? Number(withdrawalAmount) / Number(withdrawalAmountInKgc) : 0;
   const networkFeeInUsd = feeKgc * bwPriceInUsd;
-  const userReceivesBw = Number(withdrawalAmountInKgc) * 0.8;
-  const userReceivesUsd = Number(withdrawalAmount) * 0.8;
+  const userReceivesBw = Number(withdrawalAmountInKgc) * (userPct / 100);
+  const userReceivesUsd = Number(withdrawalAmount) * (userPct / 100);
   const actualReceiveBw = Math.max(0, userReceivesBw - feeKgc);
   const actualReceiveUsd = Math.max(0, userReceivesUsd - networkFeeInUsd);
 
@@ -612,13 +620,13 @@ const Withdrawal = () => {
 
   // ── Rolling 24h window since the last CONFIRMED withdrawal ──────────
   const WITHDRAWAL_WINDOW_MS = 24 * 60 * 60 * 1000;
-  const WITHDRAWAL_CHUNK = 10;
   const withdrawalWindowRemainingMs = (() => {
     if (!user?.data?.lastWithdrawalAt) return 0;
     const elapsed = Date.now() - new Date(user.data.lastWithdrawalAt).getTime();
     return Math.max(0, WITHDRAWAL_WINDOW_MS - elapsed);
   })();
-  const isWithdrawalUsedToday = withdrawalWindowRemainingMs > 0;
+  const isWithdrawalUsedToday = false; // unlimited withdrawals, no 24h window
+  const isUnlocked = Boolean(user?.data?.is2XDailyUnlocked);
   const windowRemainingLabel = (() => {
     const h = Math.floor(withdrawalWindowRemainingMs / 3600000);
     const m = Math.ceil((withdrawalWindowRemainingMs % 3600000) / 60000);
@@ -663,7 +671,7 @@ const Withdrawal = () => {
                   ${Number(salaryUsd || 0).toFixed(2)} ({salaryBw.toFixed(4)} BW)
                 </Typography>
                 <Typography sx={{ fontFamily: '"Space Grotesk", sans-serif', color: "rgba(200,215,245,0.65)", fontSize: "0.78rem", mt: 0.5 }}>
-                  Paid in full. No 20% fee, no 10 BW limit, and no new direct required.
+                  Paid in full. No fee, no withdrawal limit, and no new direct required.
                 </Typography>
               </Box>
               <Button
@@ -720,25 +728,23 @@ const Withdrawal = () => {
                       >
                         <Icon icon={isWithdrawalUsedToday ? "tabler:clock" : "tabler:check"} style={{ fontSize: "0.85rem", color: isWithdrawalUsedToday ? "#FF9F43" : "#10B981" }} />
                         <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", color: isWithdrawalUsedToday ? "#FF9F43" : "#10B981" }}>
-                          {isWithdrawalUsedToday ? `Limit Used — next in ${windowRemainingLabel}` : "1 × 10 BW Available (per 24h)"}
+                          {isWithdrawalUsedToday ? `Limit Used — next in ${windowRemainingLabel}` : `Unlimited withdrawals — ${withdrawalLimit} BW each`}
                         </Typography>
                       </Box>
                     </Box>
 
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, pt: 1, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Icon icon={unusedDirectsCount >= 1 ? "tabler:circle-check" : "tabler:lock"} style={{ color: unusedDirectsCount >= 1 ? "#10B981" : "#FF9F43", fontSize: "1rem" }} />
-                        <Typography sx={{ fontSize: "0.8rem", color: unusedDirectsCount >= 1 ? "#10B981" : "rgba(200,215,245,0.75)" }}>
-                          {unusedDirectsCount >= 1
-                            ? `✓ ${unusedDirectsCount} New Direct ID(s) Available for Withdrawal`
-                            : "🔒 1 New Active Direct Referral (5 BW) required per 10 BW withdrawal"}
+                        <Icon icon="tabler:circle-check" style={{ color: "#10B981", fontSize: "1rem" }} />
+                        <Typography sx={{ fontSize: "0.8rem", color: "#10B981" }}>
+                          No new joining required to withdraw
                         </Typography>
                       </Box>
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={() => {
-                          setWithdrawalAmount("10");
+                          setWithdrawalAmount(String(withdrawalLimit));
                           setError(false);
                         }}
                         sx={{
@@ -752,7 +758,7 @@ const Withdrawal = () => {
                           "&:hover": { background: "rgba(0,229,255,0.1)" },
                         }}
                       >
-                        Quick 10 BW
+                        Quick {withdrawalLimit} BW
                       </Button>
                     </Box>
                   </Box>
@@ -760,14 +766,14 @@ const Withdrawal = () => {
 
                 <Grid item xs={12}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    Enter Amount ($) — (Exactly 10 BW, once per 24 hours)*
+                    Enter Amount ($) — (Exactly {WITHDRAWAL_CHUNK} BW each, unlimited times)*
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
                   <CustomTextField
                     fullWidth
                     label=""
-                    placeholder="Enter Withdrawal amount (10)"
+                    placeholder={`Enter Withdrawal amount (${WITHDRAWAL_CHUNK})`}
                     onChange={e => {
                       let value = e?.target?.value;
                       value = value?.replace(/^0+(?=\d)/, "");
@@ -783,10 +789,8 @@ const Withdrawal = () => {
                       if (user?.data?.isWithdrawInactive === true) setError(`We're experiencing a technical issue. Our team is currently working to resolve it.`);
                       if (minWithdrawalLimitError) setError(`Minimum withdrawal allowed=${minWithdrawalAmountInUSDC || 0}`);
                       if (user?.data?.totalStakeAmount < 5) setError(`Minimum 5 BW stake required`);
-                      if (value && +value % WITHDRAWAL_CHUNK !== 0) setError(`Withdrawal must be exactly ${WITHDRAWAL_CHUNK} BW.`);
-                      if (value && +value > WITHDRAWAL_CHUNK) setError(`Only 1 withdrawal of ${WITHDRAWAL_CHUNK} BW is allowed per 24 hours.`);
-                      const requiredJoinings = Math.floor(+value / WITHDRAWAL_CHUNK);
-                      if (requiredJoinings > unusedDirectsCount) setError(`Requires ${requiredJoinings} new direct joining (5 BW stake). (Available: ${unusedDirectsCount})`);
+                      if (value && +value !== WITHDRAWAL_CHUNK) setError(`Each withdrawal must be exactly ${WITHDRAWAL_CHUNK} BW.`);
+                      if (value && !isUnlocked) setError(`Withdrawal unlocks after you complete 5 staked directs.`);
                       setWithdrawalAmount(value);
                     }}
                     value={withdrawalAmount}
@@ -801,19 +805,30 @@ const Withdrawal = () => {
                       <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, letterSpacing: "0.05em", color: "rgba(200,215,245,0.8)" }}>
                         WITHDRAWAL BREAKDOWN
                       </Typography>
+                      <Typography variant="caption" sx={{ display: "block", mb: 2, color: "rgba(200,215,245,0.6)" }}>
+                        {restakePct}% is auto-restaked and {salaryPct}% goes to the Salary pool. You receive cash by claiming your Salary.
+                      </Typography>
+                      {userPct > 0 && (
                       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>User Receives (80%)</Typography>
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>User Receives ({userPct}%)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#25D366" }}>
                           ${userReceivesUsd.toFixed(2)} ({userReceivesBw.toFixed(4)} BW)
                         </Typography>
                       </Box>
+                      )}
                       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Salary Rank (20%)</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF2E9F" }}>
-                          ${(Number(withdrawalAmount) * 0.2).toFixed(2)}
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Auto-Restake ({restakePct}%)</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#00E5FF" }}>
+                          ${(Number(withdrawalAmount) * (restakePct / 100)).toFixed(2)}
                         </Typography>
                       </Box>
-                      {feeKgc > 0 && (
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
+                        <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Salary Rank ({salaryPct}%)</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF2E9F" }}>
+                          ${(Number(withdrawalAmount) * (salaryPct / 100)).toFixed(2)}
+                        </Typography>
+                      </Box>
+                      {userPct > 0 && feeKgc > 0 && (
                         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                           <Typography variant="body2" sx={{ color: "rgba(200,215,245,0.5)" }}>Fee</Typography>
                           <Typography variant="body2" sx={{ fontWeight: 600, color: "#FF9F43" }}>
@@ -842,17 +857,14 @@ const Withdrawal = () => {
                 disabled={
                   isWithdrawUsdcTxInProgress || isWithdrawalTokensWaiting ||
                   !withdrawalAmount || error || loader || accError ||
-                  fetchStatus === "loading" || isWithdrawalUsedToday ||
-                  unusedDirectsCount < 1
+                  fetchStatus === "loading" || isWithdrawalUsedToday
                 }
               >
                 {user?.data?.totalStakeAmount < 5
                   ? "Minimum 5 BW Stake Required"
                   : isWithdrawalUsedToday
                     ? `Limit Reached — Next Withdrawal in ${windowRemainingLabel}`
-                    : unusedDirectsCount < 1
-                      ? "1 New Direct ID Required to Withdraw"
-                      : accError
+                    : accError
                         ? `Please connect with ${user?.data?.walletAddress?.slice(0, 6) + "..." + user?.data?.walletAddress?.slice(-6)} wallet address`
                         : isWithdrawUsdcTxInProgress
                           ? "Approve Transaction!"

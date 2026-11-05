@@ -83,6 +83,33 @@ const FastTrack2XCard = () => {
       }}
     >
       <CardContent sx={{ p: 4 }}>
+        {/* Salary claim: the main way to get cash, so it leads the card */}
+        <Button
+          component={Link}
+          href='/withdrawal'
+          fullWidth
+          variant='contained'
+          startIcon={<Icon icon='tabler:crown' style={{ fontSize: '1.8rem' }} />}
+          sx={{
+            mb: 4,
+            py: 4,
+            borderRadius: '14px',
+            ...bodyText,
+            fontSize: '1.25rem',
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            color: '#1A1300',
+            background: 'linear-gradient(135deg, #FFD700, #FFB300)',
+            boxShadow: '0 6px 22px 0 rgba(255, 215, 0, 0.35)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #FFE24D, #FFC107)',
+              boxShadow: '0 8px 26px 0 rgba(255, 215, 0, 0.5)',
+            },
+          }}
+        >
+          Withdraw Salary
+        </Button>
+
         {/* Header Row */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: '1 1 260px' }}>
@@ -304,27 +331,6 @@ const FastTrack2XCard = () => {
             }}
           >
             Stake 5 BW Now
-          </Button>
-
-          <Button
-            component={Link}
-            href='/withdrawal'
-            variant='outlined'
-            startIcon={<Icon icon='tabler:crown' />}
-            sx={{
-              borderColor: 'rgba(255,215,0,0.55)',
-              color: '#FFD700',
-              ...bodyText,
-              fontWeight: 700,
-              borderRadius: '10px',
-              px: 3,
-              '&:hover': {
-                borderColor: '#FFD700',
-                background: 'rgba(255,215,0,0.08)',
-              },
-            }}
-          >
-            Withdraw Salary
           </Button>
 
           <Button

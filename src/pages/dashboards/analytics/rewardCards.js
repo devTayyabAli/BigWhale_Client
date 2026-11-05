@@ -28,7 +28,7 @@ const getStatusColor = status => {
   return '#00E5FF'
 }
 
-const RewardCard = ({ title, status, worth, loading }) => {
+const RewardCard = ({ title, status, worth, loading, featured = false }) => {
   const { tokenBlnc: availableUSDC, isLoading, iserror } = useGetUSDCTokens(worth)
   const meta = CARD_META[title] || { icon: 'tabler:coin', color: '0,229,255', gradient: 'linear-gradient(135deg, #00E5FF, #A855F7)' }
   const isStatusCard = title === 'Account Status'
@@ -40,7 +40,11 @@ const RewardCard = ({ title, status, worth, loading }) => {
       sx={{
         background: 'rgba(13,18,36,0.85)',
         backdropFilter: 'blur(20px)',
-        border: `1px solid rgba(${meta.color},0.15)`,
+        border: `1px solid rgba(${meta.color},${featured ? 0.5 : 0.15})`,
+        ...(featured && {
+          background: `linear-gradient(135deg, rgba(${meta.color},0.14), rgba(13,18,36,0.92))`,
+          boxShadow: `0 10px 36px rgba(${meta.color},0.25)`,
+        }),
         borderRadius: '16px',
         overflow: 'hidden',
         position: 'relative',
@@ -56,20 +60,20 @@ const RewardCard = ({ title, status, worth, loading }) => {
           content: '""',
           position: 'absolute',
           top: 0, left: 0, right: 0,
-          height: '2px',
+          height: featured ? '4px' : '2px',
           background: meta.gradient,
         },
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: featured ? { xs: 5, md: 6 } : 3 }}>
         {/* Header row */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
           <Typography
             sx={{
               fontFamily: '"Space Grotesk", sans-serif',
               fontWeight: 600,
-              fontSize: '0.78rem',
-              color: 'rgba(200,215,245,0.55)',
+              fontSize: featured ? '1rem' : '0.78rem',
+              color: featured ? 'rgba(255,255,255,0.85)' : 'rgba(200,215,245,0.55)',
               letterSpacing: '0.07em',
               textTransform: 'uppercase',
             }}
@@ -79,14 +83,14 @@ const RewardCard = ({ title, status, worth, loading }) => {
           {/* Icon badge */}
           <Box
             sx={{
-              width: 34, height: 34, borderRadius: '9px',
+              width: featured ? 52 : 34, height: featured ? 52 : 34, borderRadius: '9px',
               background: `rgba(${meta.color},0.1)`,
               border: `1px solid rgba(${meta.color},0.2)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <Icon icon={meta.icon} style={{ color: `rgb(${meta.color})`, fontSize: '1.1rem' }} />
+            <Icon icon={meta.icon} style={{ color: `rgb(${meta.color})`, fontSize: featured ? '1.7rem' : '1.1rem' }} />
           </Box>
         </Box>
 
@@ -127,7 +131,7 @@ const RewardCard = ({ title, status, worth, loading }) => {
               sx={{
                 fontFamily: '"Orbitron", sans-serif',
                 fontWeight: 800,
-                fontSize: { xs: '1.3rem', md: '1.6rem' },
+                fontSize: featured ? { xs: '2.4rem', md: '3.2rem' } : { xs: '1.3rem', md: '1.6rem' },
                 background: meta.gradient,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -139,7 +143,7 @@ const RewardCard = ({ title, status, worth, loading }) => {
                 ? Number(Number(availableUSDC).toFixed(4)).toString()
                 : availableUSDC ?? '0'}
             </Typography>
-            <Typography sx={{ color: 'rgba(200,215,245,0.35)', fontSize: '0.7rem', mt: 0.5, fontFamily: '"Space Grotesk", sans-serif' }}>
+            <Typography sx={{ color: 'rgba(200,215,245,0.35)', fontSize: featured ? '0.9rem' : '0.7rem', mt: 0.5, fontFamily: '"Space Grotesk", sans-serif' }}>
               USDT equivalent
             </Typography>
           </Box>

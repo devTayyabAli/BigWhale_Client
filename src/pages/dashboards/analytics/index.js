@@ -212,20 +212,30 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12}>
           <SectionHeader icon='tabler:chart-bar' title='Portfolio Overview' subtitle='Your earnings at a glance' />
         </Grid>
-        {rewards.map((reward, index) => (
-          <Grid
-            key={index}
-            item xs={6} sm={4} md={3}
-            sx={{ animation: `${fadeInUp} 0.5s ease-out ${index * 0.05}s both` }}
-          >
-            <RewardCard
-              title={reward.title}
-              worth={reward.worth}
-              status={reward.status}
-              loading={referralStatus === 'loading'}
-            />
-          </Grid>
-        ))}
+        {/* Salary is the cash-out income, so it leads as a full-width featured card */}
+        {[...rewards]
+          .sort((a, b) => (b.title === 'Salary Bonus') - (a.title === 'Salary Bonus'))
+          .map((reward, index) => {
+            const featured = reward.title === 'Salary Bonus'
+            return (
+              <Grid
+                key={reward.title}
+                item
+                xs={featured ? 12 : 6}
+                sm={featured ? 12 : 4}
+                md={featured ? 12 : 3}
+                sx={{ animation: `${fadeInUp} 0.5s ease-out ${index * 0.05}s both` }}
+              >
+                <RewardCard
+                  title={reward.title}
+                  worth={reward.worth}
+                  status={reward.status}
+                  loading={referralStatus === 'loading'}
+                  featured={featured}
+                />
+              </Grid>
+            )
+          })}
 
         {/* News Banner */}
         <Grid item xs={12}>

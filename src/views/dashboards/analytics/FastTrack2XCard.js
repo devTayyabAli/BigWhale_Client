@@ -41,13 +41,13 @@ const FastTrack2XCard = () => {
   // Rank Info Helper
   const getRankInfo = (rankId) => {
     switch (rankId) {
-      case 7: return { title: 'Rank 7: BigWhale Legend', pct: '20%', next: null }
-      case 6: return { title: 'Rank 6: Crown Leader', pct: '15%', next: '78,125' }
-      case 5: return { title: 'Rank 5: Diamond Leader', pct: '11.5%', next: '15,625' }
-      case 4: return { title: 'Rank 4: Platinum Leader', pct: '8.5%', next: '3,125' }
-      case 3: return { title: 'Rank 3: Gold Leader', pct: '6%', next: '625' }
-      case 2: return { title: 'Rank 2: Silver Leader', pct: '4%', next: '125' }
-      case 1: return { title: 'Rank 1: Bronze Leader', pct: '2%', next: '25' }
+      case 7: return { title: 'Rank 7: BigWhale Legend', pct: '100%', next: null }
+      case 6: return { title: 'Rank 6: Crown Leader', pct: '75%', next: '78,125' }
+      case 5: return { title: 'Rank 5: Diamond Leader', pct: '57.5%', next: '15,625' }
+      case 4: return { title: 'Rank 4: Platinum Leader', pct: '42.5%', next: '3,125' }
+      case 3: return { title: 'Rank 3: Gold Leader', pct: '30%', next: '625' }
+      case 2: return { title: 'Rank 2: Silver Leader', pct: '20%', next: '125' }
+      case 1: return { title: 'Rank 1: Bronze Leader', pct: '10%', next: '25' }
       default: return { title: 'No Rank Yet', pct: '0%', next: '5' }
     }
   }
@@ -180,6 +180,9 @@ const FastTrack2XCard = () => {
                 sx={{
                   height: 6,
                   borderRadius: 3,
+                  // The theme sets overflow: visible on LinearProgress, which lets the
+                  // determinate bar slide out past the left edge of its track.
+                  overflow: 'hidden',
                   backgroundColor: 'rgba(255,255,255,0.08)',
                   '& .MuiLinearProgress-bar': {
                     background: is2XUnlocked
@@ -269,7 +272,7 @@ const FastTrack2XCard = () => {
                 {rankInfo.title}
               </Typography>
               <Typography sx={{ ...bodyText, color: '#00E5FF', fontSize: '0.8rem', fontWeight: 600, mb: 1 }}>
-                Pool share: {rankInfo.pct} of the withdrawal fee
+                Salary share: {rankInfo.pct} of the salary pool
               </Typography>
               <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
                 {rankInfo.next

@@ -310,7 +310,7 @@ const Stake = () => {
                       </Typography>
                     </Box>
                     <Typography sx={{ color: "rgba(200,215,245,0.7)", fontSize: "0.8rem", mt: 0.5 }}>
-                      Fixed 5 BW entry (only amount accepted) • 10 BW paid 24h later once you have 5 staked directs • Re-stake daily
+                      Fixed 5 BW entry (only amount accepted) • 10 BW paid 24h later once you have 5 directs • Re-stake daily
                     </Typography>
                   </Box>
                   <Button
@@ -640,7 +640,7 @@ const Stake = () => {
                   2X (10 BW) per 5 BW stake
                 </Typography>
                 <Typography variant="span" sx={{ fontSize: 11, color: "rgba(200,215,245,0.5)" }}>
-                  (paid once, 24h after stake — requires 5 staked directs)
+                  (paid once, 24h after stake — requires 5 directs)
                 </Typography>
               </Typography>
             </Box>

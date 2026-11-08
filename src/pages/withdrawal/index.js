@@ -790,7 +790,7 @@ const Withdrawal = () => {
                       if (minWithdrawalLimitError) setError(`Minimum withdrawal allowed=${minWithdrawalAmountInUSDC || 0}`);
                       if (user?.data?.totalStakeAmount < 5) setError(`Minimum 5 BW stake required`);
                       if (value && +value !== WITHDRAWAL_CHUNK) setError(`Each withdrawal must be exactly ${WITHDRAWAL_CHUNK} BW.`);
-                      if (value && !isUnlocked) setError(`Withdrawal unlocks after you complete 5 staked directs.`);
+                      if (value && !isUnlocked) setError(`Withdrawal unlocks after you have 5 directs.`);
                       setWithdrawalAmount(value);
                     }}
                     value={withdrawalAmount}

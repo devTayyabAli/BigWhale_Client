@@ -20,23 +20,22 @@ const FastTrack2XCard = () => {
   const referralStats = useSelector(state => state?.levelBonus?.referralStats)
 
   const is2XUnlocked = Boolean(currentUser?.is2XDailyUnlocked)
-  // Directs that have actually STAKED (what unlocks 2X / ranks). Falls back to
-  // active directs for older API responses.
-  const stakedDirectCount = Number(
-    referralStats?.fastTrackDirectCount ?? referralStats?.activeDirectReferrals ?? 0
-  )
-  // Every joined direct shows immediately (1, 2, 3...) even before they stake.
-  const directCount = Math.max(
-    stakedDirectCount,
-    Number(referralStats?.directReferral || 0),
-    Number(referralStats?.joinedDirectCount || 0)
+  // Directs that have STAKED (drives ranks only).
+  const stakedDirectCount = Number(referralStats?.fastTrackDirectCount ?? 0)
+  // Registered directs, staked or not — this is what unlocks 2X, so the
+  // counter, progress bar and "more needed" text all use this one number.
+  // Falls back to active directs for older API responses.
+  const directCount = Number(
+    referralStats?.unlockDirectCount ?? referralStats?.activeDirectReferrals ?? 0
   )
   const withdrawalLimit = 10 // every withdrawal is exactly 10 BW
   const currentRank = currentUser?.userRankId || null
 
   // Progress towards 5 directs to unlock 2X
-  const unlockTarget = 5
-  const unlockProgress = Math.min(100, Math.round((directCount / unlockTarget) * 100))
+  const unlockTarget = Number(referralStats?.unlockDirectTarget || 5)
+  const unlockProgress = is2XUnlocked
+    ? 100
+    : Math.min(100, Math.round((directCount / unlockTarget) * 100))
 
   // Rank Info Helper
   const getRankInfo = (rankId) => {
@@ -199,7 +198,7 @@ const FastTrack2XCard = () => {
                   mb: 1,
                 }}
               >
-                {directCount} / {unlockTarget} Directs
+                {directCount >= unlockTarget ? `${directCount} Directs` : `${directCount} / ${unlockTarget} Directs`}
               </Typography>
               <LinearProgress
                 variant='determinate'
@@ -222,7 +221,9 @@ const FastTrack2XCard = () => {
               <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
                 {is2XUnlocked
                   ? 'Qualified. Each 5 BW stake pays 10 BW after 24h'
-                  : `${Math.max(0, unlockTarget - stakedDirectCount)} more staked directs to unlock 2X (${stakedDirectCount} staked so far)`}
+                  : directCount >= unlockTarget
+                    ? '2X unlocking, please refresh in a moment'
+                    : `${unlockTarget - directCount} more direct${unlockTarget - directCount === 1 ? '' : 's'} to unlock 2X (staking not required)`}
               </Typography>
             </Box>
           </Grid>
@@ -303,7 +304,7 @@ const FastTrack2XCard = () => {
               </Typography>
               <Typography sx={{ ...bodyText, color: 'rgba(200,215,245,0.45)', fontSize: '0.7rem' }}>
                 {rankInfo.next
-                  ? `Next Tier Target: ${rankInfo.next} Total Direct Members`
+                  ? `Next Tier Target: ${rankInfo.next} Staked Direct Members`
                   : '🏆 Maximum Rank Achieved!'}
               </Typography>
             </Box>

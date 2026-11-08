@@ -296,12 +296,14 @@ const SellFunds = () => {
   useEffect(() => {
     if (userData?.data?.isKGCSaleInactive === true) {
       setError(`We're experiencing a technical issue. Our team is currently working to resolve it.`);
-    } else if (
-      userData?.data?.totalStakeAmount < 50 ||
-      selectAvailableAmountToConvert <= sellAmount
-    ) {
-      setError("withdrawal unavailable");
     }
+    // Temporarily disabled: "withdrawal unavailable" check (min stake 50 / availableAmountToConvert limit)
+    // else if (
+    //   userData?.data?.totalStakeAmount < 50 ||
+    //   selectAvailableAmountToConvert <= sellAmount
+    // ) {
+    //   setError("withdrawal unavailable");
+    // }
   }, [availableKGC, sellAmount, selectAvailableAmountToConvert]);
   return (
     <Card sx={{ p: 8 }}>
@@ -346,12 +348,13 @@ const SellFunds = () => {
                     if (userData?.data?.isKGCSaleInactive === true) {
                       setError(`We're experiencing a technical issue. Our team is currently working to resolve it.`);
                     }
-                    if (
-                      userData?.data?.totalStakeAmount < 50 ||
-                      !(selectAvailableAmountToConvert > sellAmount)
-                    ) {
-                      setError(`Withdrawal unavailable`);
-                    }
+                    // Temporarily disabled: "Withdrawal unavailable" check
+                    // if (
+                    //   userData?.data?.totalStakeAmount < 50 ||
+                    //   !(selectAvailableAmountToConvert > sellAmount)
+                    // ) {
+                    //   setError(`Withdrawal unavailable`);
+                    // }
                     setSellAmount(value);
                   }}
                   onKeyPress={(e) => {
@@ -611,8 +614,9 @@ const SellFunds = () => {
                 !sellAmount ||
                 error ||
                 sellAmount < 0.00001 ||
-                userData?.data?.totalStakeAmount < 50 ||
-                !(selectAvailableAmountToConvert > sellAmount) ||
+                // Temporarily disabled: withdrawal-unavailable conditions
+                // userData?.data?.totalStakeAmount < 50 ||
+                // !(selectAvailableAmountToConvert > sellAmount) ||
                 userData?.data?.isKGCSaleInactive === true
                 // accError
                 // ||

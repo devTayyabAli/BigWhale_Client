@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useAccount } from 'wagmi'
 import { keyframes } from '@emotion/react'
 
-import AnalyticsProject from 'src/views/dashboards/analytics/AnalyticsProject'
+// import AnalyticsProject from 'src/views/dashboards/analytics/AnalyticsProject' // temporarily hidden
 import RewardCard from './rewardCards'
 import ReferralLinks from 'src/views/dashboards/analytics/referralLink'
 import AvailableBalance from 'src/views/dashboards/analytics/AvailableBalance'
@@ -269,11 +269,11 @@ const AnalyticsDashboard = () => {
           <ReferralLinks />
         </Grid>
 
-        {/* Analytics Chart */}
-        <Grid item xs={12}>
+        {/* Analytics Chart — temporarily hidden (Level Bonus Unlock Conditions) */}
+        {/* <Grid item xs={12}>
           <SectionHeader icon='tabler:chart-line' title='Analytics' subtitle='Performance metrics' />
           <AnalyticsProject />
-        </Grid>
+        </Grid> */}
 
       </Grid>
     </Box>

@@ -413,17 +413,16 @@ const Withdrawal = () => {
   const actualReceiveBw = Math.max(0, userReceivesBw - feeKgc);
   const actualReceiveUsd = Math.max(0, userReceivesUsd - networkFeeInUsd);
 
-  // ── Fetch social status on mount ──────────────────────────────────
-  useEffect(() => {
-    if (userId && fetchStatus === "idle") dispatch(fetchSocialStatus(userId));
-  }, [userId, fetchStatus, dispatch]);
-
-  // ── Background poll every 60s (re-verification window check) ─────
-  useEffect(() => {
-    if (!userId) return;
-    const interval = setInterval(() => dispatch(fetchSocialStatus(userId)), 60_000);
-    return () => clearInterval(interval);
-  }, [userId, dispatch]);
+  // ── WhatsApp channel follow status — disabled (gate removed) ─────
+  // useEffect(() => {
+  //   if (userId && fetchStatus === "idle") dispatch(fetchSocialStatus(userId));
+  // }, [userId, fetchStatus, dispatch]);
+  //
+  // useEffect(() => {
+  //   if (!userId) return;
+  //   const interval = setInterval(() => dispatch(fetchSocialStatus(userId)), 60_000);
+  //   return () => clearInterval(interval);
+  // }, [userId, dispatch]);
 
   useEffect(() => {
     if (isSuccess && isMinWithdrawalUsdcFetched && totalStakedAmountInUSDC > 0 && totalStakedAmountInUSDC < minWithdrawalAmountInUSDC) {
@@ -515,10 +514,11 @@ const Withdrawal = () => {
   };
 
   const handleSubmit = async () => {
-    if (!bothConfirmed) {
-      setSocialGateOpen(true);
-      return;
-    }
+    // WhatsApp channel follow gate — disabled
+    // if (!bothConfirmed) {
+    //   setSocialGateOpen(true);
+    //   return;
+    // }
     if (chain?.id !== ENV.chainId) return switchNetwork?.(ENV.chainId);
     withdrawAmount();
   };
@@ -547,11 +547,12 @@ const Withdrawal = () => {
   };
 
   const handleSalaryClick = () => {
-    if (!bothConfirmed) {
-      salaryIntent.current = true;
-      setSocialGateOpen(true);
-      return;
-    }
+    // WhatsApp channel follow gate — disabled
+    // if (!bothConfirmed) {
+    //   salaryIntent.current = true;
+    //   setSocialGateOpen(true);
+    //   return;
+    // }
     withdrawSalaryNow();
   };
 
@@ -635,12 +636,13 @@ const Withdrawal = () => {
 
   return (
     <>
+      {/* WhatsApp channel follow popup — disabled
       <WhatsAppVerifyModal
         open={socialGateOpen}
         onClose={() => setSocialGateOpen(false)}
         onVerified={handleVerified}
         userId={userId}
-      />
+      /> */}
 
       <Card sx={{ p: 8 }}>
         <Card sx={{ border: 1 }}>

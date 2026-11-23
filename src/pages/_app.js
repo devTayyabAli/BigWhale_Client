@@ -530,4 +530,16 @@ const App = (props) => {
   );
 };
 
-export default App;
+// While on the maintenance page, render it alone: no providers, wallet,
+// sockets or API calls (the backend may be down during maintenance).
+const AppRoot = (props) => {
+  if (props.router?.pathname === "/maintenance") {
+    const { Component, pageProps } = props;
+
+    return <Component {...pageProps} />;
+  }
+
+  return <App {...props} />;
+};
+
+export default AppRoot;
